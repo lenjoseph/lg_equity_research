@@ -1,7 +1,6 @@
 from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableLambda
-from langgraph.graph import END, StateGraph
-from IPython.display import Image, display
+from langgraph.graph import END, StateGraph, START
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
@@ -9,7 +8,7 @@ import llm_models
 
 load_dotenv()
 
-llm = init_chat_model(llm_models.LLM_MODELS["OAI"])
+# llm = init_chat_model(llm_models.LLM_MODELS["OAI"])
 
 
 # graph state
@@ -17,64 +16,110 @@ class EquityResearchState(BaseModel):
     ticker: str
     fundamental_sentiment: str
     technical_sentiment: str
+    macro_sentiment: str
+    industry_sentiment: str
+    headline_sentiment: str
     combined_sentiment: str
 
 
 # graph nodes
-def receive_ticker(state: EquityResearchState) -> EquityResearchState:
-    """LLM call to add ticker to state"""
-    ticker = "TSLA"
-    return state.model_copy(update={"ticker": ticker})
-
-
-def call_fundamentals_research_agent(state: EquityResearchState) -> EquityResearchState:
+def fundamental_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate fundamental research sentiment"""
+    fundamental_sentiment = "sdfadsfa"
+    return {"fundamental_sentiment": fundamental_sentiment}
 
 
-def call_technicals_research_agent(state: EquityResearchState) -> EquityResearchState:
+def technical_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate technical research sentiment"""
+    technical_sentiment = "gewrgw"
+    return {"technical_sentiment": technical_sentiment}
 
 
-def synthesize_sentiment_agent(state: EquityResearchState) -> EquityResearchState:
-    """LLM call to combine research findings and synthesize sentiment"""
+def macro_research_agent(state: EquityResearchState) -> dict:
+    """LLM call to generate fundamental research sentiment"""
+    macro_sentiment = "gewrgw"
+    return {"macro_sentiment": macro_sentiment}
+
+
+def industry_research_agent(state: EquityResearchState) -> dict:
+    """LLM call to generate technical research sentiment"""
+    industry_sentiment = "gewrgw"
+    return {"industry_sentiment": industry_sentiment}
+
+
+def headline_research_agent(state: EquityResearchState) -> dict:
+    """LLM call to generate technical research sentiment"""
+    headline_sentiment = "sodfiowd"
+    return {"headline_sentiment": headline_sentiment}
+
+
+def sentiment_aggregator(state: EquityResearchState) -> dict:
+    """LLM call to aggregate research findings and synthesize sentiment"""
+    combined_sentiment = "oahfioahg"
+    return {"combined_sentiment": combined_sentiment}
 
 
 # build workflow
 parallel_builder = StateGraph(EquityResearchState)
 
 # add agent nodes
-parallel_builder.add_node(
-    "call_fundamentals_research_agent", call_fundamentals_research_agent
-)
-parallel_builder.add_node(
-    "call_technicals_research_agent", call_technicals_research_agent
-)
-parallel_builder.add_node("receive_ticker", receive_ticker)
+parallel_builder.add_node("fundamental_research_agent", fundamental_research_agent)
+parallel_builder.add_node("technical_research_agent", technical_research_agent)
+parallel_builder.add_node("macro_research_agent", macro_research_agent)
+parallel_builder.add_node("industry_research_agent", industry_research_agent)
+parallel_builder.add_node("headline_research_agent", headline_research_agent)
+parallel_builder.add_node("aggregator", sentiment_aggregator)
 
-# add edges to connect agent nodes
-parallel_builder.set_entry_point("receive_ticker")
+# call research agents in parallel
+parallel_builder.add_edge(START, "fundamental_research_agent")
+parallel_builder.add_edge(START, "technical_research_agent")
+parallel_builder.add_edge(START, "macro_research_agent")
+parallel_builder.add_edge(START, "industry_research_agent")
+parallel_builder.add_edge(START, "headline_research_agent")
 
-parallel_builder.add_edge("receive_ticker", "call_fundamentals_research_agent")
-parallel_builder.add_edge("receive_ticker", "call_technicals_research_agent")
-parallel_builder.add_edge(
-    "call_fundamentals_research_agent", "synthesize_sentiment_agent"
-)
-parallel_builder.add_edge(
-    "call_technicals_research_agent", "synthesize_sentiment_agent"
-)
-parallel_builder.add_edge("synthesize_sentiment_agent", END)
+# synthesize sentiment
+parallel_builder.add_edge("fundamental_research_agent", "aggregator")
+parallel_builder.add_edge("technical_research_agent", "aggregator")
+parallel_builder.add_edge("macro_research_agent", "aggregator")
+parallel_builder.add_edge("industry_research_agent", "aggregator")
+parallel_builder.add_edge("headline_research_agent", "aggregator")
+
+# terminate graph
+parallel_builder.add_edge("aggregator", END)
 
 # compile the graph workflow
 parallel_workflow = parallel_builder.compile()
 
+ticker = "TSLA"
+state = EquityResearchState(
+    ticker=ticker,
+    fundamental_sentiment="",
+    technical_sentiment="",
+    macro_sentiment="",
+    industry_sentiment="",
+    headline_sentiment="",
+    combined_sentiment="",
+)
+result = parallel_workflow.invoke(state)
 
-def input(ticker: str) -> dict:
-    return {"ticker": list({ticker})}
+print(result)
 
 
-def output(state: EquityResearchState) -> str:
-    result = state["combined_sentiment"]
-    return result
+def input(ticker: str) -> EquityResearchState:
+    state = EquityResearchState(
+        ticker=ticker,
+        fundamental_sentiment="",
+        technical_sentiment="",
+        macro_sentiment="",
+        industry_sentiment="",
+        headline_sentiment="",
+        combined_sentiment="",
+    )
+    return state
+
+
+def output(state: EquityResearchState) -> EquityResearchState:
+    return state
 
 
 research_chain = RunnableLambda(input) | parallel_workflow | RunnableLambda(output)
