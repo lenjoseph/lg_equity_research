@@ -16,7 +16,7 @@ HTTP API: FastAPI
 Agentic Architecture: Langgraph
 Agent Observability: LangSmith
 Data Typing: Pydantic
-LLM Models: OpenAI, Groq, Google
+LLM Models: OpenAI
 In-Memory Vector Store: ChromaDB
 Vector Embedding Model: HuggingFace
 Financial Data API: YFinance
