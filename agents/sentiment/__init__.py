@@ -1,2 +1,0 @@
-"""Sentiment agent package."""
-

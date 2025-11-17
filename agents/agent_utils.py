@@ -18,14 +18,14 @@ def run_agent_with_tools(model: str, prompt: str, tools: list):
 
     llm = ChatOpenAI(model=model).bind_tools(tools)
 
-    # First LLM call - it will request to call the tool
+    # initial invocation
     response = llm.invoke(prompt)
 
-    # Check if there are tool calls
+    # Check for tool calls
     if response.tool_calls:
         tool_call = response.tool_calls[0]
 
-        # DYNAMIC: Look up which tool the LLM requested
+        # Look up which tool the LLM requested
         requested_tool_name = tool_call["name"]
         requested_tool = tools_map[requested_tool_name]
 
@@ -52,5 +52,5 @@ def run_agent_with_tools(model: str, prompt: str, tools: list):
         final_response = llm.invoke(messages)
         return final_response.content
     else:
-        # No tool call needed, return the response directly
+        # No tool call, return the response
         return response.content

@@ -2,24 +2,14 @@ from langchain.chat_models import init_chat_model
 from langchain_core.runnables import RunnableLambda
 from langgraph.graph import END, StateGraph, START
 from dotenv import load_dotenv
-from pydantic import BaseModel
 
+from models.state import EquityResearchState
+from agents.aggregator_agent import get_aggregated_sentiment
 from agents.fundamentals_agent import get_fundamental_sentiment
 from agents.macro_agent import get_macro_sentiment
 from agents.technical_agent import get_technical_sentiment
 
 load_dotenv()
-
-
-# graph state
-class EquityResearchState(BaseModel):
-    ticker: str
-    fundamental_sentiment: str
-    technical_sentiment: str
-    macro_sentiment: str
-    industry_sentiment: str
-    headline_sentiment: str
-    combined_sentiment: str
 
 
 # graph nodes
@@ -36,26 +26,26 @@ def technical_research_agent(state: EquityResearchState) -> dict:
 
 
 def macro_research_agent(state: EquityResearchState) -> dict:
-    """LLM call to generate fundamental research sentiment"""
+    """LLM call to generate macro research sentiment"""
     macro_sentiment = get_macro_sentiment()
     return {"macro_sentiment": macro_sentiment}
 
 
 def industry_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate technical research sentiment"""
-    industry_sentiment = "gewrgw"
+    industry_sentiment = "Industry is neutral"
     return {"industry_sentiment": industry_sentiment}
 
 
 def headline_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate technical research sentiment"""
-    headline_sentiment = "sodfiowd"
+    headline_sentiment = "headlines are good"
     return {"headline_sentiment": headline_sentiment}
 
 
 def sentiment_aggregator(state: EquityResearchState) -> dict:
     """LLM call to aggregate research findings and synthesize sentiment"""
-    combined_sentiment = "oahfioahg"
+    combined_sentiment = get_aggregated_sentiment(state)
     return {"combined_sentiment": combined_sentiment}
 
 
