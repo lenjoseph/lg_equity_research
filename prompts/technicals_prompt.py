@@ -10,8 +10,14 @@ technical_research_prompt = """
     - Overall sentiment score ranges from -1 (bearish) to 1 (bullish)
     - Trends show whether price is above or below moving averages
     
+    TRADE CONTEXT:
+    You will be provided with a trade duration in days. Weight your indicators accordingly:
+    - Short-term (1-30 days): Prioritize RSI, Stochastic oscillator, MACD crossovers, and short-term momentum signals
+    - Medium-term (31-180 days): Balance both mid-term and macro-term indicators, focus on 50-day SMA and trend strength
+    - Long-term (180+ days): Emphasize 200-period SMA, long-term trend direction, and macro technical patterns
+    
     Based on this data, provide a concise technical sentiment analysis (bullish/bearish/neutral) 
     for the stock with 4-5 key supporting points from the indicators. Keep it under 250 words.
-    Be specific about which timeframes (mid-term vs macro-term) and indicators support your view.
+    Be specific about which timeframes (mid-term vs macro-term) and indicators support your view for the given trade duration.
     Only use the retrieved technical data to draw inferences.
     """

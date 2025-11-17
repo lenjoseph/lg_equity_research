@@ -9,8 +9,8 @@ from agents.agent_utils import run_agent_with_tools
 dotenv.load_dotenv()
 
 
-def get_technical_sentiment(ticker: str):
-    prompt = f"{technical_research_prompt}\n\nAnalyze the technical indicators for ticker: {ticker}"
+def get_technical_sentiment(ticker: str, trade_duration_days: int):
+    prompt = f"{technical_research_prompt}\n\nAnalyze the technical indicators for ticker: {ticker}\nTrade Duration: {trade_duration_days} days"
     tools = [get_technical_analysis_tool]
     model = LLM_MODELS["open_ai"]
     llm = ChatOpenAI(model=model)

@@ -9,8 +9,8 @@ from agents.agent_utils import run_agent_with_tools
 dotenv.load_dotenv()
 
 
-def get_macro_sentiment():
-    prompt = macro_research_prompt
+def get_macro_sentiment(trade_duration_days: int):
+    prompt = f"{macro_research_prompt}\n\nTrade Duration: {trade_duration_days} days"
     tools = [get_macro_data_tool]
     model = LLM_MODELS["open_ai"]
     llm = ChatOpenAI(model=model)

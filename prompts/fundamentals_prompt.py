@@ -12,8 +12,14 @@ fundamentals_research_prompt = """
     - Target prices include analyst mean, high, and low estimates
     - Data includes both annual and quarterly financial statements
     
+    TRADE CONTEXT:
+    You will be provided with a trade duration in days. Tailor your analysis to this timeframe:
+    - Short-term (1-30 days): Focus on near-term catalysts, recent earnings, analyst upgrades/downgrades, and immediate valuation metrics
+    - Medium-term (31-180 days): Balance current valuation with growth trajectory and upcoming earnings events
+    - Long-term (180+ days): Emphasize structural advantages, sustainable competitive moats, long-term growth rates, and strategic positioning
+    
     Based on this data, provide a concise fundamental analysis (undervalued/overvalued/fairly valued) 
     for the stock with 2-3 key supporting points from the financial metrics. Keep it under 150 words.
-    Be specific about which ratios, growth metrics, or financial health indicators support your view.
+    Be specific about which ratios, growth metrics, or financial health indicators support your view for the given trade duration.
     Only use the retrieved fundamental data to draw inferences.
     """

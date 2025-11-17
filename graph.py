@@ -17,31 +17,39 @@ load_dotenv()
 # graph nodes
 def fundamental_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate fundamental research sentiment"""
-    fundamental_sentiment = get_fundamental_sentiment(ticker=state.ticker)
+    fundamental_sentiment = get_fundamental_sentiment(
+        ticker=state.ticker, trade_duration_days=state.trade_duration_days
+    )
     return {"fundamental_sentiment": fundamental_sentiment}
 
 
 def technical_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate technical research sentiment"""
-    technical_sentiment = get_technical_sentiment(ticker=state.ticker)
+    technical_sentiment = get_technical_sentiment(
+        ticker=state.ticker, trade_duration_days=state.trade_duration_days
+    )
     return {"technical_sentiment": technical_sentiment}
 
 
 def macro_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate macro research sentiment"""
-    macro_sentiment = get_macro_sentiment()
+    macro_sentiment = get_macro_sentiment(trade_duration_days=state.trade_duration_days)
     return {"macro_sentiment": macro_sentiment}
 
 
 def industry_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate technical research sentiment"""
-    industry_sentiment = get_industry_sentiment(ticker=state.ticker)
+    industry_sentiment = get_industry_sentiment(
+        ticker=state.ticker, trade_duration_days=state.trade_duration_days
+    )
     return {"industry_sentiment": industry_sentiment}
 
 
 def headline_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate technical research sentiment"""
-    headline_sentiment = get_headline_sentiment(ticker=state.ticker)
+    headline_sentiment = get_headline_sentiment(
+        ticker=state.ticker, trade_duration_days=state.trade_duration_days
+    )
     return {"headline_sentiment": headline_sentiment}
 
 
@@ -82,36 +90,11 @@ parallel_builder.add_edge("aggregator", END)
 # compile the graph workflow
 parallel_workflow = parallel_builder.compile()
 
-ticker = "CCJ"
-state = EquityResearchState(
-    ticker=ticker,
-    fundamental_sentiment="",
-    technical_sentiment="",
-    macro_sentiment="",
-    industry_sentiment="",
-    headline_sentiment="",
-    combined_sentiment="",
-)
 
-
-result = parallel_workflow.invoke(state)
-
-print("=" * 80)
-print("MACRO SENTIMENT:")
-print("=" * 80)
-print(result.get("macro_sentiment", "NOT FOUND"))
-print("\n")
-print("=" * 80)
-print("INDUSTRY SENTIMENT:")
-print("=" * 80)
-print(result.get("industry_sentiment", "NOT FOUND"))
-print("\n")
-print(result["combined_sentiment"])
-
-
-def input(ticker: str) -> EquityResearchState:
+def input(input_dict: dict) -> EquityResearchState:
     state = EquityResearchState(
-        ticker=ticker,
+        ticker=input_dict["ticker"],
+        trade_duration_days=input_dict["trade_duration_days"],
         fundamental_sentiment="",
         technical_sentiment="",
         macro_sentiment="",
@@ -126,4 +109,5 @@ def output(state: EquityResearchState) -> EquityResearchState:
     return state
 
 
+# pipeline to interface with the API
 research_chain = RunnableLambda(input) | parallel_workflow | RunnableLambda(output)

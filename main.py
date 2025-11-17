@@ -20,8 +20,26 @@ def ping():
     return {"message": "Running"}
 
 
-@app.post("/research_equity")
+@app.post("/research-equity")
 async def research_equity(req: EquityResearchRequest):
-    """Research provided ticker"""
-    res = research_chain.invoke(req["ticker"])
-    return res
+    res = research_chain.invoke(
+        {"ticker": req.ticker, "trade_duration_days": req.trade_duration_days}
+    )
+    return {
+        "ticker": res["ticker"],
+        "trade_duration_days": res["trade_duration_days"],
+        "sentiment_analysis": {
+            "fundamental": res["fundamental_sentiment"],
+            "technical": res["technical_sentiment"],
+            "macro": res["macro_sentiment"],
+            "industry": res["industry_sentiment"],
+            "headline": res["headline_sentiment"],
+        },
+        "combined_sentiment": res["combined_sentiment"],
+    }
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -13,6 +13,12 @@ industry_research_prompt = """
     - Look for patterns and themes across the sources covering trends, competition, and industry dynamics
     - IGNORE any analysis or data older than {cutoff_date}
     
+    TRADE CONTEXT:
+    Trade Duration: {trade_duration_days} days
+    - Short-term (1-30 days): Focus on immediate sector catalysts, near-term competitive moves, and short-term supply/demand dynamics
+    - Medium-term (31-180 days): Balance current trends with emerging sector shifts and competitive repositioning
+    - Long-term (180+ days): Emphasize structural industry transformation, long-term competitive advantages, and secular trends
+    
     Your analysis should cover THREE key areas:
     
     1. SECTOR-SPECIFIC TRENDS:
@@ -29,9 +35,9 @@ industry_research_prompt = """
     3. INDUSTRY TAILWINDS/HEADWINDS:
        - What macro or industry-specific factors are providing positive momentum? (tailwinds)
        - What challenges or risks is the sector facing? (headwinds)
-       - How are these factors likely to impact companies in this space?
+       - How are these factors likely to impact companies in this space over the trade duration?
     
-    Provide a comprehensive but concise industry analysis in under 250 words.
+    Provide a comprehensive but concise industry analysis in under 250 words appropriate for the trade duration.
     Be specific and cite recent developments or data points from your research.
     Only use the retrieved industry data to draw inferences.
     """

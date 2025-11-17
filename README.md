@@ -4,7 +4,7 @@ Agentic equity research implemented on LangGraph
 
 # Architecture Description
 
-This app implements an agentic ai architecture to compile equity research on a single stock across different analytical lenses.
+This app implements an agentic ai architecture to compile equity research on a single stock across different analytical lenses for a given trade duration.
 The app exposes a POST endpoint that receives a single stock ticker which serves as the focal point of the research.
 The app structures ai agents as research domain specialists that perform data gathering and analysis scoped to their respective domain.
 The app manages state through langgraph's graph state model.

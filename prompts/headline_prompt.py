@@ -15,8 +15,14 @@ headline_research_prompt = """
     - Evaluate the credibility and impact of news sources
     - IGNORE any news older than {cutoff_date}
     
+    TRADE CONTEXT:
+    Trade Duration: {trade_duration_days} days
+    - Short-term (1-30 days): Emphasize immediate catalysts, earnings reactions, analyst upgrades/downgrades, and short-term sentiment shifts
+    - Medium-term (31-180 days): Balance recent news with ongoing narratives and medium-term strategic developments
+    - Long-term (180+ days): Focus on transformative news, major strategic shifts, regulatory changes, and long-term business trajectory changes
+    
     Based on the headlines you find, provide a concise sentiment analysis (bullish/bearish/neutral) 
     for the stock with 2-3 key supporting points derived from the news. Keep it under 150 words.
-    Be specific about which news events or themes are driving your sentiment assessment.
+    Be specific about which news events or themes are driving your sentiment assessment for the given trade duration.
     Only use the retrieved headline data to draw inferences.
     """

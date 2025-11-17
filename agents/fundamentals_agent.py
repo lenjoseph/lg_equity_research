@@ -9,8 +9,8 @@ from agents.agent_utils import run_agent_with_tools
 dotenv.load_dotenv()
 
 
-def get_fundamental_sentiment(ticker: str):
-    prompt = f"{fundamentals_research_prompt}\n\nAnalyze the business fundamentals for ticker: {ticker}"
+def get_fundamental_sentiment(ticker: str, trade_duration_days: int):
+    prompt = f"{fundamentals_research_prompt}\n\nAnalyze the business fundamentals for ticker: {ticker}\nTrade Duration: {trade_duration_days} days"
     tools = [get_fundamentals_tool]
     model = LLM_MODELS["open_ai"]
     llm = ChatOpenAI(model=model)
