@@ -2,58 +2,13 @@ from langchain_core.tools import Tool
 import pandas_datareader as pdr
 from datetime import datetime, timedelta
 import pandas as pd
-from typing import Optional
-from pydantic import BaseModel, Field, ConfigDict
 
-
-class HistoricalDataPoint(BaseModel):
-    """A single historical data point with date and value."""
-
-    date: str = Field(..., description="Date in YYYY-MM-DD format")
-    value: float = Field(..., description="The value at this date")
-
-
-class IndicatorData(BaseModel):
-    """Data for a single macroeconomic indicator."""
-
-    latest_value: float = Field(..., description="Most recent value")
-    latest_date: str = Field(
-        ..., description="Date of most recent value in YYYY-MM-DD format"
-    )
-    historical_data: list[HistoricalDataPoint] = Field(
-        ..., description="Historical time series data"
-    )
-    quarterly_change_pct_points: Optional[float] = Field(
-        None,
-        description="Quarterly change in percentage points (for rate-based indicators)",
-    )
-    monthly_change_percent: Optional[float] = Field(
-        None, description="Monthly percentage change (for index-based indicators)"
-    )
-    yoy_inflation_rate: Optional[float] = Field(
-        None, description="Year-over-year inflation rate (CPI only)"
-    )
-    error: Optional[str] = Field(
-        None, description="Error message if data retrieval failed"
-    )
-
-
-class MacroDataResponse(BaseModel):
-    """Response containing macroeconomic data from FRED."""
-
-    timestamp: str = Field(..., description="Timestamp when data was retrieved")
-    data: dict[str, IndicatorData] = Field(
-        ..., description="Dictionary of indicator names to their data"
-    )
-    error: Optional[str] = Field(
-        None, description="Error message if overall retrieval failed"
-    )
-
-
-class MacroDataInput(BaseModel):
-    """Input schema for the macro data tool. No parameters required."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+from models.tools import (
+    HistoricalDataPoint,
+    IndicatorData,
+    MacroDataResponse,
+    MacroDataInput,
+)
 
 
 def get_macro_data() -> MacroDataResponse:

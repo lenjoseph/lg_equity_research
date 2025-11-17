@@ -3,69 +3,8 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, Field
 
-
-class TechnicalAnalysis(BaseModel):
-    """Technical analysis data for a stock ticker."""
-
-    ticker: str = Field(..., description="Stock ticker")
-    current_price: float = Field(..., description="Current stock price")
-    analysis_date: str = Field(
-        ..., description="Date and time of analysis in YYYY-MM-DD HH:MM:SS format"
-    )
-
-    # Mid-term indicators (daily data)
-    mid_rsi: Optional[float] = Field(None, description="14-day Relative Strength Index")
-    mid_rsi_signal: str = Field(
-        ..., description="RSI signal: oversold, neutral, overbought, or unknown"
-    )
-    mid_sma_50: Optional[float] = Field(
-        None, description="50-day Simple Moving Average"
-    )
-    mid_sma_trend: int = Field(
-        ..., description="Price vs 50 SMA: 1 (above), -1 (below), 0 (unknown)"
-    )
-    mid_stoch_k: Optional[float] = Field(None, description="Stochastic %K oscillator")
-    mid_stoch_signal: str = Field(
-        ..., description="Stochastic signal: oversold, neutral, overbought, or unknown"
-    )
-
-    # Macro-term indicators (weekly data)
-    macro_sma_200: Optional[float] = Field(
-        None, description="200-period Simple Moving Average (weekly)"
-    )
-    macro_sma_trend: int = Field(
-        ..., description="Price vs 200 SMA: 1 (above), -1 (below), 0 (unknown)"
-    )
-    macro_macd: Optional[float] = Field(None, description="MACD line value (weekly)")
-    macro_macd_signal: int = Field(
-        ..., description="MACD vs Signal: 1 (bullish), -1 (bearish), 0 (unknown)"
-    )
-    macro_bb_position: Optional[float] = Field(
-        None, description="Position within Bollinger Bands as percentage (0-100)"
-    )
-    macro_bb_signal: str = Field(
-        ...,
-        description="Bollinger Bands signal: oversold, neutral, overbought, or unknown",
-    )
-
-    # Overall assessment
-    overall_sentiment: float = Field(
-        ..., description="Overall sentiment score from -1 (bearish) to 1 (bullish)"
-    )
-
-    error: Optional[str] = Field(None, description="Error message if analysis failed")
-
-
-class TechnicalAnalysisInput(BaseModel):
-    """Input schema for technical analysis tool."""
-
-    ticker: str = Field(..., description="Stock ticker (e.g., 'AAPL', 'MSFT')")
-    period: str = Field(
-        default="2y", description="Data period for analysis (e.g., '1y', '2y', '5y')"
-    )
+from models.tools import TechnicalAnalysis, TechnicalAnalysisInput
 
 
 def calculate_sma(data: pd.Series, length: int) -> pd.Series:

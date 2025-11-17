@@ -1,8 +1,8 @@
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from graph import research_chain
+from models.api import EquityResearchRequest
 
 app = FastAPI()
 app.add_middleware(
@@ -18,10 +18,6 @@ app.add_middleware(
 @app.get("/")
 def ping():
     return {"message": "Running"}
-
-
-class EquityResearchRequest(BaseModel):
-    ticker: str
 
 
 @app.post("/research_equity")

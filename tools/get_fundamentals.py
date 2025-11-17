@@ -3,60 +3,8 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, Optional
-from pydantic import BaseModel, Field
 
-
-class FundamentalsData(BaseModel):
-    """Fundamental analysis data for a stock ticker."""
-
-    ticker: str = Field(..., description="Stock ticker symbol")
-    company_name: Optional[str] = Field(None, description="Company full name")
-    sector: Optional[str] = Field(None, description="Company sector")
-    industry: Optional[str] = Field(None, description="Company industry")
-
-    # Earnings data
-    earnings: Optional[Dict[str, Any]] = Field(
-        None, description="Earnings data (annual and quarterly)"
-    )
-
-    # Financial statements
-    balance_sheet: Optional[Dict[str, Any]] = Field(
-        None, description="Balance sheet data (annual and quarterly)"
-    )
-    income_statement: Optional[Dict[str, Any]] = Field(
-        None, description="Income statement data (annual and quarterly)"
-    )
-    cash_flow: Optional[Dict[str, Any]] = Field(
-        None, description="Cash flow statement (annual and quarterly)"
-    )
-
-    # Financial ratios
-    ratios: Optional[Dict[str, Any]] = Field(
-        None,
-        description="Key financial ratios (P/E, ROE, debt-to-equity, margins, etc.)",
-    )
-
-    # Valuation metrics
-    valuation_metrics: Optional[Dict[str, Any]] = Field(
-        None,
-        description="Valuation metrics for DCF and comparable analysis (market cap, EV, beta, etc.)",
-    )
-
-    # Price data
-    current_price: Optional[float] = Field(None, description="Current stock price")
-    target_price: Optional[Dict[str, Any]] = Field(
-        None, description="Analyst target prices (mean, high, low)"
-    )
-
-    # Error handling
-    error: Optional[str] = Field(None, description="Error message if analysis failed")
-    message: Optional[str] = Field(None, description="Additional error context")
-
-
-class FundamentalsInput(BaseModel):
-    """Input schema for fundamentals analysis tool."""
-
-    ticker: str = Field(..., description="Stock ticker symbol (e.g., 'AAPL', 'MSFT')")
+from models.tools import FundamentalsData, FundamentalsInput
 
 
 def _convert_to_json_serializable(df: pd.DataFrame) -> Dict[str, Any]:
