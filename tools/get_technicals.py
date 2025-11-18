@@ -100,93 +100,168 @@ def get_bollinger_signal(price, bb_upper, bb_lower):
         return "neutral"
 
 
-def add_daily_indicators(data: pd.DataFrame):
-    """Add mid-term technical indicators to daily data"""
-    data["SMA_50"] = calculate_sma(data["Close"], 50)
-    data["RSI"] = calculate_rsi(data["Close"], 14)
-    stoch = calculate_stochastic(data["High"], data["Low"], data["Close"])
+def calculate_indicator_periods(trade_duration_days: int) -> dict:
+    """
+    Calculate appropriate indicator periods based on trade duration.
+
+    Args:
+        trade_duration_days: Expected holding period in days
+
+    Returns:
+        Dictionary with calibrated periods for each indicator
+    """
+    # Short-term indicators (approximately 0.5x trade duration)
+    # Minimum of 7 days for stability, maximum of 50 for very long durations
+    short_sma_period = max(7, min(50, int(trade_duration_days * 0.5)))
+
+    # RSI period (approximately 0.3-0.5x trade duration)
+    # Keep between 7 and 21 for reliability
+    rsi_period = max(7, min(21, int(trade_duration_days * 0.4)))
+
+    # Stochastic period (similar to RSI)
+    stoch_period = max(7, min(21, int(trade_duration_days * 0.4)))
+
+    # Long-term SMA (approximately 3-4x trade duration)
+    # Minimum of 20 days, scales up for longer trades
+    long_sma_period = max(20, min(200, int(trade_duration_days * 3.5)))
+
+    # MACD periods (scale proportionally from standard 12/26/9)
+    # For 30-day trade: ~12/26/9, for 7-day: ~3/6/2, for 90-day: ~36/78/27
+    macd_fast = max(3, min(36, int(trade_duration_days * 0.4)))
+    macd_slow = max(6, min(78, int(trade_duration_days * 0.87)))
+    macd_signal = max(2, min(27, int(trade_duration_days * 0.3)))
+
+    # Bollinger Bands (approximately 0.7x trade duration)
+    bb_period = max(10, min(50, int(trade_duration_days * 0.67)))
+
+    # Determine data interval and history period based on trade duration
+    if trade_duration_days <= 14:
+        interval = "1h"  # Hourly data for very short trades
+        history_period = "60d"  # 2 months of hourly data
+    elif trade_duration_days <= 60:
+        interval = "1d"  # Daily data for short to medium trades
+        history_period = f"{max(365, long_sma_period * 3)}d"
+    else:
+        interval = "1d"  # Daily data for longer trades
+        history_period = f"{max(730, long_sma_period * 3)}d"
+
+    return {
+        "short_sma": short_sma_period,
+        "long_sma": long_sma_period,
+        "rsi": rsi_period,
+        "stochastic": stoch_period,
+        "macd_fast": macd_fast,
+        "macd_slow": macd_slow,
+        "macd_signal": macd_signal,
+        "bb": bb_period,
+        "interval": interval,
+        "history_period": history_period,
+    }
+
+
+def add_technical_indicators(data: pd.DataFrame, periods: dict):
+    """Add technical indicators to data using specified periods"""
+    data["Short_SMA"] = calculate_sma(data["Close"], periods["short_sma"])
+    data["Long_SMA"] = calculate_sma(data["Close"], periods["long_sma"])
+    data["RSI"] = calculate_rsi(data["Close"], periods["rsi"])
+    stoch = calculate_stochastic(
+        data["High"], data["Low"], data["Close"], k_period=periods["stochastic"]
+    )
     data["Stoch_K"] = stoch["K"]
-
-
-def add_weekly_indicators(data: pd.DataFrame):
-    """Add macro-term technical indicators to weekly data"""
-    data["SMA_200"] = calculate_sma(data["Close"], 200)
-    macd = calculate_macd(data["Close"])
+    macd = calculate_macd(
+        data["Close"],
+        fast=periods["macd_fast"],
+        slow=periods["macd_slow"],
+        signal=periods["macd_signal"],
+    )
     data["MACD"] = macd["MACD"]
     data["MACD_Signal"] = macd["Signal"]
-    bb = calculate_bollinger_bands(data["Close"], 20)
+    bb = calculate_bollinger_bands(data["Close"], periods["bb"])
     data["BB_Upper"] = bb["Upper"]
     data["BB_Lower"] = bb["Lower"]
     data["BB_Mid"] = bb["Middle"]
 
 
-def get_technical_analysis(ticker: str, period: str = "2y") -> TechnicalAnalysis:
+def get_technical_analysis(ticker: str, trade_duration_days: int) -> TechnicalAnalysis:
     """
-    Performs macro and mid-term technical analysis on a stock using yfinance.
+    Performs technical analysis on a stock with indicators calibrated to the trade duration.
 
     Args:
         ticker (str): Stock ticker (e.g., 'AAPL').
-        period (str): Data period (e.g., '2y' for 2 years).
+        trade_duration_days (int): Expected holding period in days. Indicators are calibrated
+                                   to this timeframe (e.g., 7 for weekly, 30 for monthly, 90 for quarterly).
 
     Returns:
         TechnicalAnalysis: Structured output with indicators, signals, and sentiment.
     """
     try:
-        stock = yf.Ticker(ticker)
-        daily_data = stock.history(period=period, interval="1d")
-        weekly_data = stock.history(period=period, interval="1wk")
+        # Calculate appropriate indicator periods based on trade duration
+        periods = calculate_indicator_periods(trade_duration_days)
 
-        if daily_data.empty or weekly_data.empty:
+        stock = yf.Ticker(ticker)
+        data = stock.history(
+            period=periods["history_period"], interval=periods["interval"]
+        )
+
+        if data.empty:
             raise ValueError(f"No data found for {ticker}")
 
-        # Add technical indicators
-        add_daily_indicators(daily_data)
-        add_weekly_indicators(weekly_data)
+        # Add technical indicators with calibrated periods
+        add_technical_indicators(data, periods)
 
         # Current values (latest close)
-        latest_daily = daily_data.iloc[-1]
-        latest_weekly = weekly_data.iloc[-1]
-        current_price = latest_daily["Close"]
+        latest = data.iloc[-1]
+        current_price = latest["Close"]
+
+        # Calculate trends and signals
+        short_sma_trend = safe_compare(current_price, latest["Short_SMA"])
+        long_sma_trend = safe_compare(current_price, latest["Long_SMA"])
+        macd_signal = safe_compare(latest["MACD"], latest["MACD_Signal"])
 
         # Overall sentiment score (-1 to 1)
         # Filter out 0 values that indicate missing/unknown data
-        mid_sma_trend = safe_compare(current_price, latest_daily["SMA_50"])
-        macro_sma_trend = safe_compare(current_price, latest_weekly["SMA_200"])
-        macro_macd_signal = safe_compare(
-            latest_weekly["MACD"], latest_weekly["MACD_Signal"]
-        )
-
-        signals = [mid_sma_trend, macro_sma_trend, macro_macd_signal]
+        signals = [short_sma_trend, long_sma_trend, macd_signal]
         valid_signals = [s for s in signals if s != 0]
         if valid_signals:
             overall_sentiment = sum(valid_signals) / len(valid_signals)
         else:
             overall_sentiment = 0.0  # Neutral if no valid signals
 
+        # Calculate Bollinger Band position
+        bb_position = None
+        if not pd.isna(latest["BB_Upper"]) and not pd.isna(latest["BB_Lower"]):
+            bb_range = latest["BB_Upper"] - latest["BB_Lower"]
+            if bb_range > 0:
+                bb_position = safe_float(
+                    (current_price - latest["BB_Lower"]) / bb_range * 100
+                )
+
         return TechnicalAnalysis(
             ticker=ticker,
             current_price=float(current_price),
             analysis_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            # Mid-term
-            mid_rsi=safe_float(latest_daily["RSI"]),
-            mid_rsi_signal=get_signal(latest_daily["RSI"], 30, 70),
-            mid_sma_50=safe_float(latest_daily["SMA_50"]),
-            mid_sma_trend=mid_sma_trend,
-            mid_stoch_k=safe_float(latest_daily["Stoch_K"]),
-            mid_stoch_signal=get_signal(latest_daily["Stoch_K"], 20, 80),
-            # Macro-term
-            macro_sma_200=safe_float(latest_weekly["SMA_200"]),
-            macro_sma_trend=macro_sma_trend,
-            macro_macd=safe_float(latest_weekly["MACD"]),
-            macro_macd_signal=macro_macd_signal,
-            macro_bb_position=safe_float(
-                (current_price - latest_weekly["BB_Lower"])
-                / (latest_weekly["BB_Upper"] - latest_weekly["BB_Lower"])
-                * 100
+            # Short-term indicators
+            short_rsi=safe_float(latest["RSI"]),
+            short_rsi_signal=get_signal(latest["RSI"], 30, 70),
+            short_sma=safe_float(latest["Short_SMA"]),
+            short_sma_trend=short_sma_trend,
+            short_stoch_k=safe_float(latest["Stoch_K"]),
+            short_stoch_signal=get_signal(latest["Stoch_K"], 20, 80),
+            # Long-term indicators
+            long_sma=safe_float(latest["Long_SMA"]),
+            long_sma_trend=long_sma_trend,
+            macd=safe_float(latest["MACD"]),
+            macd_signal_value=macd_signal,
+            bb_position=bb_position,
+            bb_signal=get_bollinger_signal(
+                current_price, latest["BB_Upper"], latest["BB_Lower"]
             ),
-            macro_bb_signal=get_bollinger_signal(
-                current_price, latest_weekly["BB_Upper"], latest_weekly["BB_Lower"]
-            ),
+            # Period information
+            rsi_period=periods["rsi"],
+            short_sma_period=periods["short_sma"],
+            long_sma_period=periods["long_sma"],
+            stochastic_period=periods["stochastic"],
+            bb_period=periods["bb"],
             # Overall
             overall_sentiment=overall_sentiment,
         )
@@ -196,12 +271,12 @@ def get_technical_analysis(ticker: str, period: str = "2y") -> TechnicalAnalysis
             ticker=ticker,
             current_price=0.0,
             analysis_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            mid_rsi_signal="unknown",
-            mid_sma_trend=0,
-            mid_stoch_signal="unknown",
-            macro_sma_trend=0,
-            macro_macd_signal=0,
-            macro_bb_signal="unknown",
+            short_rsi_signal="unknown",
+            short_sma_trend=0,
+            short_stoch_signal="unknown",
+            long_sma_trend=0,
+            macd_signal_value=0,
+            bb_signal="unknown",
             overall_sentiment=-1.0,
             error=str(e),
         )
@@ -209,7 +284,7 @@ def get_technical_analysis(ticker: str, period: str = "2y") -> TechnicalAnalysis
 
 get_technical_analysis_tool = Tool(
     name="get_technical_analysis_tool",
-    description="Use this tool to perform technical analysis on a stock. Analyzes mid-term (daily) and macro-term (weekly) indicators including RSI, Moving Averages, MACD, Stochastic Oscillator, and Bollinger Bands. Returns structured data with buy/sell signals and overall sentiment.",
+    description="Use this tool to perform technical analysis on a stock with indicators calibrated to your specific trade duration. Provide the ticker and expected holding period in days (e.g., 7 for weekly, 30 for monthly, 90 for quarterly trades). The tool automatically adjusts RSI, Moving Averages, MACD, Stochastic Oscillator, and Bollinger Bands periods to match your timeframe. Returns structured data with buy/sell signals and overall sentiment tailored to your trade horizon.",
     func=get_technical_analysis,
     args_schema=TechnicalAnalysisInput,
 )

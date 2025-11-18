@@ -66,40 +66,49 @@ class TechnicalAnalysis(BaseModel):
         ..., description="Date and time of analysis in YYYY-MM-DD HH:MM:SS format"
     )
 
-    # Mid-term indicators (daily data)
-    mid_rsi: Optional[float] = Field(None, description="14-day Relative Strength Index")
-    mid_rsi_signal: str = Field(
+    # Short-term indicators (calibrated to ~0.5x trade duration)
+    short_rsi: Optional[float] = Field(
+        None, description="Short-term Relative Strength Index"
+    )
+    short_rsi_signal: str = Field(
         ..., description="RSI signal: oversold, neutral, overbought, or unknown"
     )
-    mid_sma_50: Optional[float] = Field(
-        None, description="50-day Simple Moving Average"
+    short_sma: Optional[float] = Field(
+        None, description="Short-term Simple Moving Average"
     )
-    mid_sma_trend: int = Field(
-        ..., description="Price vs 50 SMA: 1 (above), -1 (below), 0 (unknown)"
+    short_sma_trend: int = Field(
+        ..., description="Price vs short SMA: 1 (above), -1 (below), 0 (unknown)"
     )
-    mid_stoch_k: Optional[float] = Field(None, description="Stochastic %K oscillator")
-    mid_stoch_signal: str = Field(
+    short_stoch_k: Optional[float] = Field(None, description="Stochastic %K oscillator")
+    short_stoch_signal: str = Field(
         ..., description="Stochastic signal: oversold, neutral, overbought, or unknown"
     )
 
-    # Macro-term indicators (weekly data)
-    macro_sma_200: Optional[float] = Field(
-        None, description="200-period Simple Moving Average (weekly)"
+    # Long-term indicators (calibrated to ~3-4x trade duration)
+    long_sma: Optional[float] = Field(
+        None, description="Long-term Simple Moving Average"
     )
-    macro_sma_trend: int = Field(
-        ..., description="Price vs 200 SMA: 1 (above), -1 (below), 0 (unknown)"
+    long_sma_trend: int = Field(
+        ..., description="Price vs long SMA: 1 (above), -1 (below), 0 (unknown)"
     )
-    macro_macd: Optional[float] = Field(None, description="MACD line value (weekly)")
-    macro_macd_signal: int = Field(
+    macd: Optional[float] = Field(None, description="MACD line value")
+    macd_signal_value: int = Field(
         ..., description="MACD vs Signal: 1 (bullish), -1 (bearish), 0 (unknown)"
     )
-    macro_bb_position: Optional[float] = Field(
+    bb_position: Optional[float] = Field(
         None, description="Position within Bollinger Bands as percentage (0-100)"
     )
-    macro_bb_signal: str = Field(
+    bb_signal: str = Field(
         ...,
         description="Bollinger Bands signal: oversold, neutral, overbought, or unknown",
     )
+
+    # Period information
+    rsi_period: Optional[int] = Field(None, description="RSI calculation period used")
+    short_sma_period: Optional[int] = Field(None, description="Short SMA period used")
+    long_sma_period: Optional[int] = Field(None, description="Long SMA period used")
+    stochastic_period: Optional[int] = Field(None, description="Stochastic period used")
+    bb_period: Optional[int] = Field(None, description="Bollinger Bands period used")
 
     # Overall assessment
     overall_sentiment: float = Field(
@@ -113,8 +122,9 @@ class TechnicalAnalysisInput(BaseModel):
     """Input schema for technical analysis tool."""
 
     ticker: str = Field(..., description="Stock ticker (e.g., 'AAPL', 'MSFT')")
-    period: str = Field(
-        default="2y", description="Data period for analysis (e.g., '1y', '2y', '5y')"
+    trade_duration_days: int = Field(
+        ...,
+        description="Expected trade duration in days. Technical indicators will be calibrated to this timeframe (e.g., 7 for weekly trades, 30 for monthly, 90 for quarterly)",
     )
 
 
