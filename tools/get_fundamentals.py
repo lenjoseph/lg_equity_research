@@ -2,7 +2,7 @@ from langchain_core.tools import Tool
 import yfinance as yf
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 from models.tools import FundamentalsData, FundamentalsInput
 
