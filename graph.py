@@ -89,6 +89,13 @@ parallel_builder.add_edge("aggregator", END)
 # compile the graph workflow
 parallel_workflow = parallel_builder.compile()
 
+# uncomment to regenerate architectural diagram
+
+# png_data = parallel_workflow.get_graph().draw_mermaid_png()
+
+# with open("architecture.png", "wb") as f:
+#     f.write(png_data)
+
 
 def input(input_dict: dict) -> EquityResearchState:
     state = EquityResearchState(

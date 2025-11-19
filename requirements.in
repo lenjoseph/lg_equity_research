@@ -9,6 +9,7 @@ chromadb
 sentence-transformers
 pydantic
 IPython
+mermaid-cli
 fastapi
 pandas_datareader
 yfinance
