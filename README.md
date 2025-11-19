@@ -16,15 +16,15 @@ When all agents have executed, a aggregator agent synthesizes overall sentiment 
 
 # Architecture Components
 
-HTTP API: FastAPI
-Agentic Architecture: Langgraph
-Agent Observability: LangSmith
-Data Typing: Pydantic
-LLM Models: OpenAI
-In-Memory Vector Store: ChromaDB
-Vector Embedding Model: HuggingFace
-Financial Data API: YFinance
-Economic Data API: Pandas Datareader
+- HTTP API: FastAPI
+- Agentic Architecture: Langgraph
+- Agent Observability: LangSmith
+- Data Typing: Pydantic
+- LLM Models: OpenAI
+- In-Memory Vector Store: ChromaDB
+- Vector Embedding Model: HuggingFace
+- Financial Data API: YFinance
+- Economic Data API: Pandas Datareader
 
 # AI Agent Descriptions
 
