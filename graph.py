@@ -1,7 +1,6 @@
 from langchain_core.runnables import RunnableLambda
 from langgraph.graph import END, StateGraph, START
 from langgraph.cache.memory import InMemoryCache
-from langgraph.types import CachePolicy
 from dotenv import load_dotenv
 
 from agents.headline_agent import get_headline_sentiment
@@ -11,6 +10,7 @@ from agents.aggregator_agent import get_aggregated_sentiment
 from agents.fundamentals_agent import get_fundamental_sentiment
 from agents.macro_agent import get_macro_sentiment
 from agents.technical_agent import get_technical_sentiment
+from util import create_cache_policy
 
 load_dotenv()
 
@@ -63,33 +63,25 @@ def sentiment_aggregator(state: EquityResearchState) -> dict:
 # configure graph cache
 cache = InMemoryCache()
 
+
 # evict fundamentals cache after one day
 # todo: get smart about dynamic cache eviction; set ttl based on last earnings release for ticker
-fundamental_research_cache_policy = CachePolicy(
-    key_func=lambda x: f"{x.ticker}_{x.trade_duration}".encode(), ttl=86400
-)
+fundamental_research_cache_policy = create_cache_policy(ttl=86400)
 
 # evict technical research cache after 5 minutes
-technical_research_cache_policy = CachePolicy(
-    key_func=lambda x: f"{x.ticker}_{x.trade_duration}".encode(), ttl=300
-)
+technical_research_cache_policy = create_cache_policy(ttl=300)
 
 # evict macro research cache after one day
 # todo: get smart about dynamic cache eviction; set ttl based on last fed report issuance
-# static key since macro conditions are universal (don't depend on ticker or trade_duration)
-macro_research_cache_policy = CachePolicy(
-    key_func=lambda x: b"macro_research", ttl=86400
+macro_research_cache_policy = create_cache_policy(
+    ttl=86400, static_key="macro_research"
 )
 
 # evict industry research cache after one day
-industry_research_cache_policy = CachePolicy(
-    key_func=lambda x: f"{x.ticker}_{x.trade_duration}".encode(), ttl=86400
-)
+industry_research_cache_policy = create_cache_policy(ttl=86400)
 
 # evict headline research cache after one hour
-headline_research_cache_policy = CachePolicy(
-    key_func=lambda x: f"{x.ticker}_{x.trade_duration}".encode(), ttl=3600
-)
+headline_research_cache_policy = create_cache_policy(ttl=3600)
 
 
 # build workflow
