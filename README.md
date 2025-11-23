@@ -13,11 +13,13 @@ The app structures ai agents as research domain specialists that perform data ga
 The app manages state through langgraph's graph state model.
 Research agents are executed in parallel at the start of the workflow.
 When all agents have executed, a aggregator agent synthesizes overall sentiment for the stock.
+The graph implements a node-based cache that configures cache keys and ttl at the agent level.
 
 # Architecture Components
 
 - HTTP API: FastAPI
 - Agentic Architecture: Langgraph
+- Agent node caching: Langgraph InMemory Cache
 - Agent Observability: LangSmith
 - Data Typing: Pydantic
 - LLM Models: OpenAI
