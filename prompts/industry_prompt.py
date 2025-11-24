@@ -40,4 +40,14 @@ industry_research_prompt = """
     Provide a comprehensive but concise industry analysis in under 250 words appropriate for the trade duration.
     Be specific and cite recent developments or data points from your research.
     Only use the retrieved industry data to draw inferences.
+    
+    Return your response in the following Markdown format:
+
+    [POSITIVE/NEGATIVE/NEUTRAL]
+
+    *   [Key Point 1]
+    *   [Key Point 2]
+    *   [Key Point 3]
+
+    Confidence: [High/Medium/Low]
     """
