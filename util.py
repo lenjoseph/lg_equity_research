@@ -13,6 +13,16 @@ def create_cache_policy(ttl: int, static_key: str | None = None) -> CachePolicy:
     """
     if static_key:
         return CachePolicy(key_func=lambda x: static_key.encode(), ttl=ttl)
-    return CachePolicy(
-        key_func=lambda x: f"{x.ticker}_{x.trade_duration}".encode(), ttl=ttl
-    )
+
+    # Handle both dict and object state representations
+    # graph drawing in langsmith requires dict representation
+    # graph execution requires pydantic object representation
+    def key_func(x):
+        if isinstance(x, dict):
+            # Handle missing keys (e.g., when drawing graph without state)
+            ticker = x.get("ticker", "default")
+            trade_duration = x.get("trade_duration", "default")
+            return f"{ticker}_{trade_duration}".encode()
+        return f"{x.ticker}_{x.trade_duration}".encode()
+
+    return CachePolicy(key_func=key_func, ttl=ttl)
