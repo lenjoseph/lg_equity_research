@@ -1,12 +1,11 @@
 import dotenv
 from langchain_openai import ChatOpenAI
 
-from aggregation.prompt import research_aggregation_prompt
+from agents.aggregation.prompt import research_aggregation_prompt
 from models.state import EquityResearchState
 from models.trade_duration_utils import trade_duration_to_label
-
-from shared.agent_utils import run_agent_with_tools
-from shared.llm_models import LLM_MODELS
+from agents.shared.agent_utils import run_agent_with_tools
+from agents.shared.llm_models import LLM_MODELS
 
 
 dotenv.load_dotenv()

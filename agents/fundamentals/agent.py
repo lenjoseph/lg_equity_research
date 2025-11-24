@@ -1,12 +1,12 @@
 import dotenv
 from langchain_openai import ChatOpenAI
 
-from fundamentals.prompt import fundamentals_research_prompt
-from fundamentals.tools import get_fundamentals_tool
+from agents.fundamentals.prompt import fundamentals_research_prompt
+from agents.fundamentals.tools import get_fundamentals_tool
 from models.api import TradeDuration
 from models.trade_duration_utils import trade_duration_to_label
-from shared.agent_utils import run_agent_with_tools
-from shared.llm_models import LLM_MODELS
+from agents.shared.agent_utils import run_agent_with_tools
+from agents.shared.llm_models import LLM_MODELS
 
 dotenv.load_dotenv()
 

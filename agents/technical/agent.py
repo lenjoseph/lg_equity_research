@@ -3,10 +3,10 @@ from langchain_openai import ChatOpenAI
 
 from models.api import TradeDuration
 from models.trade_duration_utils import trade_duration_to_label
-from shared.agent_utils import run_agent_with_tools
-from shared.llm_models import LLM_MODELS
-from technical.prompt import technical_research_prompt
-from technical.tools import get_technical_analysis_tool
+from agents.shared.agent_utils import run_agent_with_tools
+from agents.shared.llm_models import LLM_MODELS
+from agents.technical.prompt import technical_research_prompt
+from agents.technical.tools import get_technical_analysis_tool
 
 dotenv.load_dotenv()
 

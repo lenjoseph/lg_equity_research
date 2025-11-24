@@ -2,11 +2,11 @@ import dotenv
 from datetime import datetime, timedelta
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-from headline.prompt import headline_research_prompt
+from agents.headline.prompt import headline_research_prompt
 from models.api import TradeDuration
 from models.trade_duration_utils import trade_duration_to_label
-from shared.agent_utils import run_agent_with_tools
-from shared.llm_models import LLM_MODELS
+from agents.shared.agent_utils import run_agent_with_tools
+from agents.shared.llm_models import LLM_MODELS
 
 
 dotenv.load_dotenv()

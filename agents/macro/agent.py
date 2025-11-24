@@ -1,10 +1,10 @@
 import dotenv
 from langchain_openai import ChatOpenAI
 
-from macro.prompt import macro_research_prompt
-from macro.tools import get_macro_data_tool
-from shared.agent_utils import run_agent_with_tools
-from shared.llm_models import LLM_MODELS
+from agents.macro.prompt import macro_research_prompt
+from agents.macro.tools import get_macro_data_tool
+from agents.shared.agent_utils import run_agent_with_tools
+from agents.shared.llm_models import LLM_MODELS
 
 dotenv.load_dotenv()
 
