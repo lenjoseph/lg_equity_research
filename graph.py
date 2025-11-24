@@ -9,7 +9,7 @@ from aggregation.agent import get_aggregated_sentiment
 from models.state import EquityResearchState
 from agents.fundamentals_agent import get_fundamental_sentiment
 from macro.agent import get_macro_sentiment
-from agents.technical_agent import get_technical_sentiment
+from technical.agent import get_technical_sentiment
 from util import create_cache_policy
 
 load_dotenv()
