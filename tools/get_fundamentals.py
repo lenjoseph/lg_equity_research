@@ -72,6 +72,43 @@ def _clean_dict_for_json(obj: Any) -> Any:
         return obj
 
 
+def _process_dataframe(
+    df: pd.DataFrame, keep_rows: list[str] = None, limit_columns: int = 3
+) -> Dict[str, Any]:
+    """
+    Process DataFrame to reduce size:
+    1. Limit to recent columns (periods)
+    2. Filter to specific rows (metrics) if provided
+    3. Convert to JSON-serializable dict
+    """
+    if df is None:
+        return None
+
+    try:
+        if df.empty:
+            return None
+    except (AttributeError, ValueError):
+        return None
+
+    try:
+        df_processed = df.copy()
+
+        # Limit columns (assume sorted by date descending, which yfinance usually does)
+        if limit_columns and len(df_processed.columns) > limit_columns:
+            df_processed = df_processed.iloc[:, :limit_columns]
+
+        # Filter rows if whitelist provided
+        if keep_rows:
+            valid_indices = [idx for idx in df_processed.index if idx in keep_rows]
+            if valid_indices:
+                df_processed = df_processed.loc[valid_indices]
+
+        return _convert_to_json_serializable(df_processed)
+    except Exception as e:
+        print(f"Warning: Error processing DataFrame: {e}")
+        return _convert_to_json_serializable(df)
+
+
 def get_earnings_and_financial_health(ticker: str) -> FundamentalsData:
     """
     Get comprehensive earnings and financial health data for a given ticker.
@@ -88,36 +125,99 @@ def get_earnings_and_financial_health(ticker: str) -> FundamentalsData:
         # Create ticker object
         stock = yf.Ticker(ticker)
 
-        # Get financial statements (run blocking calls in thread pool)
-        balance_sheet_annual = stock.balance_sheet
-        balance_sheet_quarterly = stock.quarterly_balance_sheet
+        # Define important metrics to keep
+        # Income Statement
+        income_metrics = [
+            "Total Revenue",
+            "Gross Profit",
+            "Operating Income",
+            "Net Income",
+            "EBITDA",
+            "Basic EPS",
+            "Diluted EPS",
+            "Interest Expense",
+            "Tax Provision",
+        ]
 
-        income_statement_annual = stock.income_stmt
-        income_statement_quarterly = stock.quarterly_income_stmt
-        cash_flow_annual = stock.cashflow
-        cash_flow_quarterly = stock.quarterly_cashflow
+        # Balance Sheet
+        balance_metrics = [
+            "Total Assets",
+            "Current Assets",
+            "Cash And Cash Equivalents",
+            "Inventory",
+            "Total Liabilities",
+            "Current Liabilities",
+            "Total Debt",
+            "Net Debt",
+            "Stockholders Equity",
+            "Working Capital",
+        ]
+
+        # Cash Flow
+        cash_flow_metrics = [
+            "Operating Cash Flow",
+            "Investing Cash Flow",
+            "Financing Cash Flow",
+            "Free Cash Flow",
+            "Capital Expenditure",
+            "Repayment Of Debt",
+            "Issuance Of Debt",
+            "Repurchase Of Capital Stock",
+            "Cash Dividends Paid",
+        ]
+
+        # Get financial statements (run blocking calls in thread pool)
+        # Fetch raw DFs first
+        df_balance_sheet_annual = stock.balance_sheet
+        df_balance_sheet_quarterly = stock.quarterly_balance_sheet
+
+        df_income_statement_annual = stock.income_stmt
+        df_income_statement_quarterly = stock.quarterly_income_stmt
+        df_cash_flow_annual = stock.cashflow
+        df_cash_flow_quarterly = stock.quarterly_cashflow
 
         # Extract earnings data (Net Income) from income statements
-        # Note: stock.earnings is deprecated, so we extract from income_stmt instead
         earnings_annual = None
         earnings_quarterly = None
         try:
             if (
-                income_statement_annual is not None
-                and "Net Income" in income_statement_annual.index
+                df_income_statement_annual is not None
+                and "Net Income" in df_income_statement_annual.index
             ):
-                earnings_annual = income_statement_annual.loc[["Net Income"]]
+                earnings_annual = df_income_statement_annual.loc[["Net Income"]]
         except (KeyError, AttributeError):
             pass
 
         try:
             if (
-                income_statement_quarterly is not None
-                and "Net Income" in income_statement_quarterly.index
+                df_income_statement_quarterly is not None
+                and "Net Income" in df_income_statement_quarterly.index
             ):
-                earnings_quarterly = income_statement_quarterly.loc[["Net Income"]]
+                earnings_quarterly = df_income_statement_quarterly.loc[["Net Income"]]
         except (KeyError, AttributeError):
             pass
+
+        # Process and limit dataframes
+        balance_sheet_annual = _process_dataframe(
+            df_balance_sheet_annual, keep_rows=balance_metrics, limit_columns=3
+        )
+        balance_sheet_quarterly = _process_dataframe(
+            df_balance_sheet_quarterly, keep_rows=balance_metrics, limit_columns=4
+        )
+
+        income_statement_annual = _process_dataframe(
+            df_income_statement_annual, keep_rows=income_metrics, limit_columns=3
+        )
+        income_statement_quarterly = _process_dataframe(
+            df_income_statement_quarterly, keep_rows=income_metrics, limit_columns=4
+        )
+
+        cash_flow_annual = _process_dataframe(
+            df_cash_flow_annual, keep_rows=cash_flow_metrics, limit_columns=3
+        )
+        cash_flow_quarterly = _process_dataframe(
+            df_cash_flow_quarterly, keep_rows=cash_flow_metrics, limit_columns=4
+        )
 
         # Get company info for ratios and metrics
         info = stock.info
@@ -177,16 +277,16 @@ def get_earnings_and_financial_health(ticker: str) -> FundamentalsData:
                 "quarterly": _convert_to_json_serializable(earnings_quarterly),
             },
             balance_sheet={
-                "annual": _convert_to_json_serializable(balance_sheet_annual),
-                "quarterly": _convert_to_json_serializable(balance_sheet_quarterly),
+                "annual": balance_sheet_annual,
+                "quarterly": balance_sheet_quarterly,
             },
             income_statement={
-                "annual": _convert_to_json_serializable(income_statement_annual),
-                "quarterly": _convert_to_json_serializable(income_statement_quarterly),
+                "annual": income_statement_annual,
+                "quarterly": income_statement_quarterly,
             },
             cash_flow={
-                "annual": _convert_to_json_serializable(cash_flow_annual),
-                "quarterly": _convert_to_json_serializable(cash_flow_quarterly),
+                "annual": cash_flow_annual,
+                "quarterly": cash_flow_quarterly,
             },
             ratios=ratios,
             valuation_metrics=valuation_metrics,
