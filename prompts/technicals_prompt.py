@@ -24,8 +24,20 @@ technical_research_prompt = """
     - Position Trade: Weight longer-term trends more heavily
     - Consider the calibrated periods provided in the response when discussing trends
     
-    Based on this data, provide a concise technical sentiment analysis (bullish/bearish/neutral) 
-    for the stock with 4-5 key supporting points from the indicators. Keep it under 250 words.
-    Reference the specific calibrated periods when discussing indicator readings.
+    Based on this data, provide a concise technical sentiment analysis.
+    
+    Return your response in the following Markdown format:
+    
+    [BULLISH/BEARISH/NEUTRAL]
+    
+    *   [Key Point 1]
+    *   [Key Point 2]
+    *   [Key Point 3]
+    *   [Key Point 4]
+    *   [Key Point 5]
+    
+    Confidence: [High/Medium/Low]
+    
+    Keep it under 250 words. Reference the specific calibrated periods when discussing indicator readings.
     Only use the retrieved technical data to draw inferences.
     """

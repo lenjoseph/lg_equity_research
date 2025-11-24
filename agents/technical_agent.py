@@ -1,13 +1,12 @@
 import dotenv
 from langchain_openai import ChatOpenAI
 
-from models.agent_output import TechnicalAnalysisOutput
 from models.api import TradeDuration
 from models.trade_duration_utils import trade_duration_to_label
 from tools.get_technicals import get_technical_analysis_tool
 from prompts.technicals_prompt import technical_research_prompt
 from constants.llm_models import LLM_MODELS
-from agents.agent_utils import run_agent_with_tools, format_analysis_output
+from agents.agent_utils import run_agent_with_tools
 
 dotenv.load_dotenv()
 
@@ -18,7 +17,5 @@ def get_technical_sentiment(ticker: str, trade_duration: TradeDuration):
     tools = [get_technical_analysis_tool]
     model = LLM_MODELS["open_ai"]
     llm = ChatOpenAI(model=model)
-    result = run_agent_with_tools(
-        llm, prompt, tools, structured_output=TechnicalAnalysisOutput
-    )
-    return format_analysis_output(result)
+    result = run_agent_with_tools(llm, prompt, tools)
+    return result

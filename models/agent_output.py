@@ -17,22 +17,6 @@ class FundamentalAnalysisOutput(BaseModel):
     )
 
 
-class TechnicalAnalysisOutput(BaseModel):
-    """Structured output model for technical analysis."""
-
-    sentiment: str = Field(
-        description="Overall technical sentiment: 'bullish', 'bearish', or 'neutral'"
-    )
-    key_points: list[str] = Field(
-        description="Exactly 3 key supporting points from technical indicators. You must provide exactly 3 points.",
-        min_length=3,
-        max_length=3,
-    )
-    confidence: str = Field(
-        description="Confidence level in the analysis: 'high', 'medium', or 'low'"
-    )
-
-
 class MacroAnalysisOutput(BaseModel):
     """Structured output model for macro analysis."""
 
