@@ -3,11 +3,11 @@ from langgraph.graph import END, StateGraph, START
 from langgraph.cache.memory import InMemoryCache
 from dotenv import load_dotenv
 
-from agents.headline_agent import get_headline_sentiment
-from agents.industry_agent import get_industry_sentiment
+from headline.agent import get_headline_sentiment
+from industry.agent import get_industry_sentiment
 from aggregation.agent import get_aggregated_sentiment
 from models.state import EquityResearchState
-from agents.fundamentals_agent import get_fundamental_sentiment
+from fundamentals.agent import get_fundamental_sentiment
 from macro.agent import get_macro_sentiment
 from technical.agent import get_technical_sentiment
 from util import create_cache_policy
