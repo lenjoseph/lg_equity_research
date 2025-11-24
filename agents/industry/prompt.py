@@ -15,12 +15,6 @@ industry_research_prompt = """
     
     You MUST use the google_search_retrieval tool to get this data. Do not make it up.
     
-    TRADE CONTEXT:
-    Trade Duration: {trade_duration}
-    - Day Trade: Focus on immediate sector catalysts, near-term competitive moves, and short-term supply/demand dynamics
-    - Swing Trade: Balance current trends with emerging sector shifts and short-term competitive movements
-    - Position Trade: Balance current trends with emerging sector shifts and competitive repositioning
-    
     Your analysis should cover THREE key areas:
     
     1. SECTOR-SPECIFIC TRENDS:
@@ -37,9 +31,9 @@ industry_research_prompt = """
     3. INDUSTRY TAILWINDS/HEADWINDS:
        - What macro or industry-specific factors are providing positive momentum? (tailwinds)
        - What challenges or risks is the sector facing? (headwinds)
-       - How are these factors likely to impact companies in this space over the trade duration?
+       - How are these factors likely to impact companies in this space?
     
-    Provide a comprehensive but concise industry analysis in under 250 words appropriate for the trade duration.
+    Provide a comprehensive but concise industry analysis in under 250 words.
     Be specific and cite recent developments or data points from your research.
     Only use the retrieved industry data to draw inferences.
     

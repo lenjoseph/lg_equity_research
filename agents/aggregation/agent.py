@@ -3,7 +3,6 @@ from langchain_openai import ChatOpenAI
 
 from agents.aggregation.prompt import research_aggregation_prompt
 from models.state import EquityResearchState
-from models.trade_duration_utils import trade_duration_to_label
 from agents.shared.agent_utils import run_agent_with_tools
 from agents.shared.llm_models import LLM_MODELS
 
@@ -12,13 +11,11 @@ dotenv.load_dotenv()
 
 
 def get_aggregated_sentiment(state: EquityResearchState):
-    trade_duration_label = trade_duration_to_label(state.trade_duration)
 
     prompt = (
         f"{research_aggregation_prompt}\n\nAggregate the following equity research:\n\n"
     )
     prompt += f"Ticker: {state.ticker}\n"
-    prompt += f"Trade Duration: {trade_duration_label}\n\n"
     prompt += f"Fundamental Analysis:\n{state.fundamental_sentiment}\n\n"
     prompt += f"Technical Analysis:\n{state.technical_sentiment}\n\n"
     prompt += f"Macro Analysis:\n{state.macro_sentiment}\n\n"

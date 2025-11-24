@@ -6,7 +6,7 @@ def create_cache_policy(ttl: int, static_key: str | None = None) -> CachePolicy:
 
     Args:
         ttl: Time to live in seconds
-        static_key: If provided, uses a static key. Otherwise, uses ticker+duration pattern.
+        static_key: If provided, uses a static key. Otherwise, uses ticker.
 
     Returns:
         CachePolicy instance
@@ -21,8 +21,7 @@ def create_cache_policy(ttl: int, static_key: str | None = None) -> CachePolicy:
         if isinstance(x, dict):
             # Handle missing keys (e.g., when drawing graph without state)
             ticker = x.get("ticker", "default")
-            trade_duration = x.get("trade_duration", "default")
-            return f"{ticker}_{trade_duration}".encode()
-        return f"{x.ticker}_{x.trade_duration}".encode()
+            return f"{ticker}".encode()
+        return f"{x.ticker}".encode()
 
     return CachePolicy(key_func=key_func, ttl=ttl)

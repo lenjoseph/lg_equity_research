@@ -4,8 +4,6 @@ import pandas as pd
 from datetime import datetime
 
 from models.tools import TechnicalAnalysis, TechnicalAnalysisInput
-from models.api import TradeDuration
-from models.trade_duration_utils import trade_duration_to_days
 
 
 def calculate_sma(data: pd.Series, length: int) -> pd.Series:
@@ -101,108 +99,30 @@ def get_bollinger_signal(price, bb_upper, bb_lower):
         return "neutral"
 
 
-def calculate_indicator_periods(trade_duration_days: int) -> dict:
+def get_technical_analysis(ticker: str) -> TechnicalAnalysis:
     """
-    Calculate appropriate indicator periods based on trade duration.
-
-    Args:
-        trade_duration_days: Expected holding period in days
-
-    Returns:
-        Dictionary with calibrated periods for each indicator
-    """
-    # Short-term indicators (approximately 0.5x trade duration)
-    # Minimum of 7 days for stability, maximum of 50 for very long durations
-    short_sma_period = max(7, min(50, int(trade_duration_days * 0.5)))
-
-    # RSI period (approximately 0.3-0.5x trade duration)
-    # Keep between 7 and 21 for reliability
-    rsi_period = max(7, min(21, int(trade_duration_days * 0.4)))
-
-    # Stochastic period (similar to RSI)
-    stoch_period = max(7, min(21, int(trade_duration_days * 0.4)))
-
-    # Long-term SMA (approximately 3-4x trade duration)
-    # Minimum of 20 days, scales up for longer trades
-    long_sma_period = max(20, min(200, int(trade_duration_days * 3.5)))
-
-    # MACD periods (scale proportionally from standard 12/26/9)
-    # For 30-day trade: ~12/26/9, for 7-day: ~3/6/2, for 90-day: ~36/78/27
-    macd_fast = max(3, min(36, int(trade_duration_days * 0.4)))
-    macd_slow = max(6, min(78, int(trade_duration_days * 0.87)))
-    macd_signal = max(2, min(27, int(trade_duration_days * 0.3)))
-
-    # Bollinger Bands (approximately 0.7x trade duration)
-    bb_period = max(10, min(50, int(trade_duration_days * 0.67)))
-
-    # Determine data interval and history period based on trade duration
-    if trade_duration_days <= 14:
-        interval = "1h"  # Hourly data for very short trades
-        history_period = "60d"  # 2 months of hourly data
-    elif trade_duration_days <= 60:
-        interval = "1d"  # Daily data for short to medium trades
-        history_period = f"{max(365, long_sma_period * 3)}d"
-    else:
-        interval = "1d"  # Daily data for longer trades
-        history_period = f"{max(730, long_sma_period * 3)}d"
-
-    return {
-        "short_sma": short_sma_period,
-        "long_sma": long_sma_period,
-        "rsi": rsi_period,
-        "stochastic": stoch_period,
-        "macd_fast": macd_fast,
-        "macd_slow": macd_slow,
-        "macd_signal": macd_signal,
-        "bb": bb_period,
-        "interval": interval,
-        "history_period": history_period,
-    }
-
-
-def add_technical_indicators(data: pd.DataFrame, periods: dict):
-    """Add technical indicators to data using specified periods"""
-    data["Short_SMA"] = calculate_sma(data["Close"], periods["short_sma"])
-    data["Long_SMA"] = calculate_sma(data["Close"], periods["long_sma"])
-    data["RSI"] = calculate_rsi(data["Close"], periods["rsi"])
-    stoch = calculate_stochastic(
-        data["High"], data["Low"], data["Close"], k_period=periods["stochastic"]
-    )
-    data["Stoch_K"] = stoch["K"]
-    macd = calculate_macd(
-        data["Close"],
-        fast=periods["macd_fast"],
-        slow=periods["macd_slow"],
-        signal=periods["macd_signal"],
-    )
-    data["MACD"] = macd["MACD"]
-    data["MACD_Signal"] = macd["Signal"]
-    bb = calculate_bollinger_bands(data["Close"], periods["bb"])
-    data["BB_Upper"] = bb["Upper"]
-    data["BB_Lower"] = bb["Lower"]
-    data["BB_Mid"] = bb["Middle"]
-
-
-def get_technical_analysis(ticker: str, trade_duration: str) -> TechnicalAnalysis:
-    """
-    Performs technical analysis on a stock with indicators calibrated to the trade duration.
+    Performs technical analysis on a stock with standard indicators.
 
     Args:
         ticker (str): Stock ticker (e.g., 'AAPL').
-        trade_duration (str): Trade duration type ('day_trade', 'swing_trade', or 'position_trade').
 
     Returns:
         TechnicalAnalysis: Structured output with indicators, signals, and sentiment.
     """
     try:
-        # Convert string to enum
-        trade_duration_enum = TradeDuration(trade_duration)
-
-        # Convert trade duration enum to days
-        trade_duration_days = trade_duration_to_days(trade_duration_enum)
-
-        # Calculate appropriate indicator periods based on trade duration
-        periods = calculate_indicator_periods(trade_duration_days)
+        # Standard indicator periods
+        periods = {
+            "short_sma": 20,
+            "long_sma": 50,
+            "rsi": 14,
+            "stochastic": 14,
+            "macd_fast": 12,
+            "macd_slow": 26,
+            "macd_signal": 9,
+            "bb": 20,
+            "interval": "1d",
+            "history_period": "1y",
+        }
 
         stock = yf.Ticker(ticker)
         data = stock.history(
@@ -288,9 +208,32 @@ def get_technical_analysis(ticker: str, trade_duration: str) -> TechnicalAnalysi
         )
 
 
+def add_technical_indicators(data: pd.DataFrame, periods: dict):
+    """Add technical indicators to data using specified periods"""
+    data["Short_SMA"] = calculate_sma(data["Close"], periods["short_sma"])
+    data["Long_SMA"] = calculate_sma(data["Close"], periods["long_sma"])
+    data["RSI"] = calculate_rsi(data["Close"], periods["rsi"])
+    stoch = calculate_stochastic(
+        data["High"], data["Low"], data["Close"], k_period=periods["stochastic"]
+    )
+    data["Stoch_K"] = stoch["K"]
+    macd = calculate_macd(
+        data["Close"],
+        fast=periods["macd_fast"],
+        slow=periods["macd_slow"],
+        signal=periods["macd_signal"],
+    )
+    data["MACD"] = macd["MACD"]
+    data["MACD_Signal"] = macd["Signal"]
+    bb = calculate_bollinger_bands(data["Close"], periods["bb"])
+    data["BB_Upper"] = bb["Upper"]
+    data["BB_Lower"] = bb["Lower"]
+    data["BB_Mid"] = bb["Middle"]
+
+
 get_technical_analysis_tool = Tool(
     name="get_technical_analysis_tool",
-    description="Use this tool to perform technical analysis on a stock with indicators calibrated to your specific trade duration. Provide the ticker and trade_duration (must be one of: 'day_trade', 'swing_trade', or 'position_trade'). The tool automatically adjusts RSI, Moving Averages, MACD, Stochastic Oscillator, and Bollinger Bands periods to match your timeframe. Returns structured data with buy/sell signals and overall sentiment tailored to your trade horizon.",
+    description="Use this tool to perform technical analysis on a stock. Provide the ticker. The tool calculates RSI, Moving Averages, MACD, Stochastic Oscillator, and Bollinger Bands. Returns structured data with buy/sell signals and overall sentiment.",
     func=get_technical_analysis,
     args_schema=TechnicalAnalysisInput,
 )

@@ -122,10 +122,6 @@ class TechnicalAnalysisInput(BaseModel):
     """Input schema for technical analysis tool."""
 
     ticker: str = Field(..., description="Stock ticker (e.g., 'AAPL', 'MSFT')")
-    trade_duration: str = Field(
-        ...,
-        description="Trade duration type. Must be one of: 'day_trade' (intraday), 'swing_trade' (7 days), or 'position_trade' (30 days)",
-    )
 
 
 # Macro Data Models
@@ -185,10 +181,6 @@ class OptionsDataInput(BaseModel):
 
     ticker_symbol: str = Field(
         ..., description="Stock ticker symbol (e.g., 'AAPL', 'MSFT')"
-    )
-    trade_duration: str = Field(
-        ...,
-        description="Trade duration type. Must be one of: 'day_trade', 'swing_trade', or 'position_trade'. The tool will select the most relevant expiration date based on this timeframe.",
     )
     min_oi: int = Field(
         100,

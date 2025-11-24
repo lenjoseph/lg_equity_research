@@ -3,17 +3,14 @@ from langchain_openai import ChatOpenAI
 
 from agents.fundamentals.prompt import fundamentals_research_prompt
 from agents.fundamentals.tools import get_fundamentals_tool
-from models.api import TradeDuration
-from models.trade_duration_utils import trade_duration_to_label
 from agents.shared.agent_utils import run_agent_with_tools
 from agents.shared.llm_models import LLM_MODELS
 
 dotenv.load_dotenv()
 
 
-def get_fundamental_sentiment(ticker: str, trade_duration: TradeDuration):
-    trade_duration_label = trade_duration_to_label(trade_duration)
-    prompt = f"{fundamentals_research_prompt}\n\nAnalyze the business fundamentals for ticker: {ticker}\nTrade Duration: {trade_duration_label}"
+def get_fundamental_sentiment(ticker: str):
+    prompt = f"{fundamentals_research_prompt}\n\nAnalyze the business fundamentals for ticker: {ticker}"
     tools = [get_fundamentals_tool]
     model = LLM_MODELS["open_ai_smart"]
     llm = ChatOpenAI(model=model)

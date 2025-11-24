@@ -13,14 +13,9 @@ fundamentals_research_prompt = """
     - Data includes both annual and quarterly financial statements
     
     TRADE CONTEXT:
-    You will be provided with a trade duration type. Tailor your analysis to this timeframe:
-    - Day Trade: Focus on near-term catalysts, recent earnings, analyst upgrades/downgrades, and immediate valuation metrics
-    - Swing Trade: Balance current valuation with growth trajectory and upcoming earnings events
-    - Position Trade: Emphasize structural advantages, sustainable competitive moats, long-term growth rates, and strategic positioning
-    
-    Based on this data, provide a concise fundamental analysis (undervalued/overvalued/fairly valued) 
+    Based on this data, provide a concise fundamental analysis (undervalued/overvalued/fairly valued)
     for the stock with 2-3 key supporting points from the financial metrics. Keep it under 150 words.
-    Be specific about which ratios, growth metrics, or financial health indicators support your view for the given trade duration.
+    Be specific about which ratios, growth metrics, or financial health indicators support your view.
     Only use the retrieved fundamental data to draw inferences.
     
     Return your response in the following Markdown format:
