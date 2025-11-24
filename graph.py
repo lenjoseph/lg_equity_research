@@ -71,9 +71,9 @@ parallel_builder = StateGraph(EquityResearchState)
 parallel_builder.add_node(
     "fundamental_research_agent",
     fundamental_research_agent,
-    # evict fundamentals cache after one day
+    # evict fundamentals cache after one houe
     # todo: get smart about dynamic cache eviction; set ttl based on last earnings release for ticker
-    cache_policy=create_cache_policy(ttl=86400),
+    cache_policy=create_cache_policy(ttl=3600),
 )
 parallel_builder.add_node(
     "technical_research_agent",
@@ -84,15 +84,15 @@ parallel_builder.add_node(
 parallel_builder.add_node(
     "macro_research_agent",
     macro_research_agent,
-    # evict macro research cache after one day
+    # evict macro research cache after one hour
     # todo: get smart about dynamic cache eviction; set ttl based on last fed report issuance
-    cache_policy=create_cache_policy(ttl=86400, static_key="macro_research"),
+    cache_policy=create_cache_policy(ttl=3600, static_key="macro_research"),
 )
 parallel_builder.add_node(
     "industry_research_agent",
     industry_research_agent,
-    # evict industry research cache after one day
-    cache_policy=create_cache_policy(ttl=86400),
+    # evict industry research cache after one hour
+    cache_policy=create_cache_policy(ttl=3600),
 )
 
 parallel_builder.add_node(
