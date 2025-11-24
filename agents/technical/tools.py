@@ -101,7 +101,7 @@ def get_bollinger_signal(price, bb_upper, bb_lower):
 
 def get_technical_analysis(ticker: str) -> TechnicalAnalysis:
     """
-    Performs technical analysis on a stock with standard indicators.
+    Performs technical analysis on a stock with standard investment indicators.
 
     Args:
         ticker (str): Stock ticker (e.g., 'AAPL').
@@ -110,10 +110,10 @@ def get_technical_analysis(ticker: str) -> TechnicalAnalysis:
         TechnicalAnalysis: Structured output with indicators, signals, and sentiment.
     """
     try:
-        # Standard indicator periods
+        # Standard indicator periods for investment analysis
         periods = {
-            "short_sma": 20,
-            "long_sma": 50,
+            "sma_50": 50,
+            "sma_200": 200,
             "rsi": 14,
             "stochastic": 14,
             "macd_fast": 12,
@@ -121,7 +121,7 @@ def get_technical_analysis(ticker: str) -> TechnicalAnalysis:
             "macd_signal": 9,
             "bb": 20,
             "interval": "1d",
-            "history_period": "1y",
+            "history_period": "2y",  # Need at least 200 data points for SMA 200
         }
 
         stock = yf.Ticker(ticker)
@@ -132,7 +132,7 @@ def get_technical_analysis(ticker: str) -> TechnicalAnalysis:
         if data.empty:
             raise ValueError(f"No data found for {ticker}")
 
-        # Add technical indicators with calibrated periods
+        # Add technical indicators
         add_technical_indicators(data, periods)
 
         # Current values (latest close)
@@ -140,13 +140,13 @@ def get_technical_analysis(ticker: str) -> TechnicalAnalysis:
         current_price = latest["Close"]
 
         # Calculate trends and signals
-        short_sma_trend = safe_compare(current_price, latest["Short_SMA"])
-        long_sma_trend = safe_compare(current_price, latest["Long_SMA"])
+        sma_50_trend = safe_compare(current_price, latest["SMA_50"])
+        sma_200_trend = safe_compare(current_price, latest["SMA_200"])
         macd_signal = safe_compare(latest["MACD"], latest["MACD_Signal"])
 
         # Overall sentiment score (-1 to 1)
         # Filter out 0 values that indicate missing/unknown data
-        signals = [short_sma_trend, long_sma_trend, macd_signal]
+        signals = [sma_50_trend, sma_200_trend, macd_signal]
         valid_signals = [s for s in signals if s != 0]
         if valid_signals:
             overall_sentiment = sum(valid_signals) / len(valid_signals)
@@ -166,28 +166,23 @@ def get_technical_analysis(ticker: str) -> TechnicalAnalysis:
             ticker=ticker,
             current_price=float(current_price),
             analysis_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            # Short-term indicators
-            short_rsi=safe_float(latest["RSI"]),
-            short_rsi_signal=get_signal(latest["RSI"], 30, 70),
-            short_sma=safe_float(latest["Short_SMA"]),
-            short_sma_trend=short_sma_trend,
-            short_stoch_k=safe_float(latest["Stoch_K"]),
-            short_stoch_signal=get_signal(latest["Stoch_K"], 20, 80),
-            # Long-term indicators
-            long_sma=safe_float(latest["Long_SMA"]),
-            long_sma_trend=long_sma_trend,
+            # Momentum
+            rsi=safe_float(latest["RSI"]),
+            rsi_signal=get_signal(latest["RSI"], 30, 70),
+            stoch_k=safe_float(latest["Stoch_K"]),
+            stoch_signal=get_signal(latest["Stoch_K"], 20, 80),
+            # Trend
+            sma_50=safe_float(latest["SMA_50"]),
+            sma_50_trend=sma_50_trend,
+            sma_200=safe_float(latest["SMA_200"]),
+            sma_200_trend=sma_200_trend,
             macd=safe_float(latest["MACD"]),
             macd_signal_value=macd_signal,
+            # Volatility
             bb_position=bb_position,
             bb_signal=get_bollinger_signal(
                 current_price, latest["BB_Upper"], latest["BB_Lower"]
             ),
-            # Period information
-            rsi_period=periods["rsi"],
-            short_sma_period=periods["short_sma"],
-            long_sma_period=periods["long_sma"],
-            stochastic_period=periods["stochastic"],
-            bb_period=periods["bb"],
             # Overall
             overall_sentiment=overall_sentiment,
         )
@@ -197,10 +192,10 @@ def get_technical_analysis(ticker: str) -> TechnicalAnalysis:
             ticker=ticker,
             current_price=0.0,
             analysis_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            short_rsi_signal="unknown",
-            short_sma_trend=0,
-            short_stoch_signal="unknown",
-            long_sma_trend=0,
+            rsi_signal="unknown",
+            stoch_signal="unknown",
+            sma_50_trend=0,
+            sma_200_trend=0,
             macd_signal_value=0,
             bb_signal="unknown",
             overall_sentiment=-1.0,
@@ -210,8 +205,8 @@ def get_technical_analysis(ticker: str) -> TechnicalAnalysis:
 
 def add_technical_indicators(data: pd.DataFrame, periods: dict):
     """Add technical indicators to data using specified periods"""
-    data["Short_SMA"] = calculate_sma(data["Close"], periods["short_sma"])
-    data["Long_SMA"] = calculate_sma(data["Close"], periods["long_sma"])
+    data["SMA_50"] = calculate_sma(data["Close"], periods["sma_50"])
+    data["SMA_200"] = calculate_sma(data["Close"], periods["sma_200"])
     data["RSI"] = calculate_rsi(data["Close"], periods["rsi"])
     stoch = calculate_stochastic(
         data["High"], data["Low"], data["Close"], k_period=periods["stochastic"]
@@ -233,7 +228,7 @@ def add_technical_indicators(data: pd.DataFrame, periods: dict):
 
 get_technical_analysis_tool = Tool(
     name="get_technical_analysis_tool",
-    description="Use this tool to perform technical analysis on a stock. Provide the ticker. The tool calculates RSI, Moving Averages, MACD, Stochastic Oscillator, and Bollinger Bands. Returns structured data with buy/sell signals and overall sentiment.",
+    description="Use this tool to perform technical analysis on a stock. Provide the ticker. The tool calculates RSI, Moving Averages (50/200 day), MACD, Stochastic Oscillator, and Bollinger Bands. Returns structured data with buy/sell signals and overall sentiment.",
     func=get_technical_analysis,
     args_schema=TechnicalAnalysisInput,
 )

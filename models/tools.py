@@ -66,53 +66,45 @@ class TechnicalAnalysis(BaseModel):
         ..., description="Date and time of analysis in YYYY-MM-DD HH:MM:SS format"
     )
 
-    # Short-term indicators (calibrated to ~0.5x trade duration)
-    short_rsi: Optional[float] = Field(
-        None, description="Short-term Relative Strength Index"
+    # Momentum Indicators
+    rsi: Optional[float] = Field(None, description="Relative Strength Index (14-day)")
+    rsi_signal: str = Field(
+        ...,
+        description="RSI signal: oversold (<30), neutral, overbought (>70), or unknown",
     )
-    short_rsi_signal: str = Field(
-        ..., description="RSI signal: oversold, neutral, overbought, or unknown"
-    )
-    short_sma: Optional[float] = Field(
-        None, description="Short-term Simple Moving Average"
-    )
-    short_sma_trend: int = Field(
-        ..., description="Price vs short SMA: 1 (above), -1 (below), 0 (unknown)"
-    )
-    short_stoch_k: Optional[float] = Field(None, description="Stochastic %K oscillator")
-    short_stoch_signal: str = Field(
-        ..., description="Stochastic signal: oversold, neutral, overbought, or unknown"
+    stoch_k: Optional[float] = Field(None, description="Stochastic %K oscillator")
+    stoch_signal: str = Field(
+        ...,
+        description="Stochastic signal: oversold (<20), neutral, overbought (>80), or unknown",
     )
 
-    # Long-term indicators (calibrated to ~3-4x trade duration)
-    long_sma: Optional[float] = Field(
-        None, description="Long-term Simple Moving Average"
+    # Trend Indicators
+    sma_50: Optional[float] = Field(None, description="50-day Simple Moving Average")
+    sma_50_trend: int = Field(
+        ..., description="Price vs 50-day SMA: 1 (above), -1 (below), 0 (unknown)"
     )
-    long_sma_trend: int = Field(
-        ..., description="Price vs long SMA: 1 (above), -1 (below), 0 (unknown)"
+    sma_200: Optional[float] = Field(None, description="200-day Simple Moving Average")
+    sma_200_trend: int = Field(
+        ..., description="Price vs 200-day SMA: 1 (above), -1 (below), 0 (unknown)"
     )
     macd: Optional[float] = Field(None, description="MACD line value")
     macd_signal_value: int = Field(
         ..., description="MACD vs Signal: 1 (bullish), -1 (bearish), 0 (unknown)"
     )
+
+    # Volatility
     bb_position: Optional[float] = Field(
         None, description="Position within Bollinger Bands as percentage (0-100)"
     )
     bb_signal: str = Field(
         ...,
-        description="Bollinger Bands signal: oversold, neutral, overbought, or unknown",
+        description="Bollinger Bands signal: oversold (price < lower), neutral, overbought (price > upper), or unknown",
     )
-
-    # Period information
-    rsi_period: Optional[int] = Field(None, description="RSI calculation period used")
-    short_sma_period: Optional[int] = Field(None, description="Short SMA period used")
-    long_sma_period: Optional[int] = Field(None, description="Long SMA period used")
-    stochastic_period: Optional[int] = Field(None, description="Stochastic period used")
-    bb_period: Optional[int] = Field(None, description="Bollinger Bands period used")
 
     # Overall assessment
     overall_sentiment: float = Field(
-        ..., description="Overall sentiment score from -1 (bearish) to 1 (bullish)"
+        ...,
+        description="Overall technical sentiment score from -1 (bearish) to 1 (bullish)",
     )
 
     error: Optional[str] = Field(None, description="Error message if analysis failed")
