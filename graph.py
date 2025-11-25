@@ -97,10 +97,6 @@ def sentiment_aggregator(state: EquityResearchState) -> dict:
     return {"combined_sentiment": combined_sentiment}
 
 
-# configure graph cache
-cache = InMemoryCache()
-
-
 # build workflow
 graph_builder = StateGraph(EquityResearchState)
 
@@ -171,7 +167,9 @@ graph_builder.add_edge("headline_research_agent", "aggregator")
 # terminate graph
 graph_builder.add_edge("aggregator", END)
 
-# compile the graph workflow
+# compile the graph workflow with node caching
+cache = InMemoryCache()
+
 graph_workflow = graph_builder.compile(cache=cache)
 
 # uncomment to regenerate architectural diagram
