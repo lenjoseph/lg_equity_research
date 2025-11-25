@@ -22,20 +22,19 @@ The app exposes a POST endpoint that receives a single stock ticker which serves
 
 The app structures ai agents as research domain specialists that perform data gathering and analysis scoped to their respective domain.
 The app manages state through langgraph's graph state model.
-Research agents are executed in parallel at the start of the workflow.
-When all agents have executed, a aggregator agent synthesizes overall sentiment for the stock.
 The graph implements a node-based cache that configures cache keys and ttl at the agent level.
+The entrypoint of the graph vaidates that the ticker is valid using yfinance.
+Once the ticker is vaidated, research agents are executed in parallel.
+When all agents have executed, a aggregator agent synthesizes overall sentiment for the stock.
 
 # Architecture Components
 
 - HTTP API: FastAPI
 - Agentic Architecture: Langgraph
-- Agent node caching: Langgraph InMemory Cache
+- Agent node caching: Langgraph Node Cache
 - Agent Observability: LangSmith
-- Data Typing: Pydantic
-- LLM Models: OpenAI
-- In-Memory Vector Store: ChromaDB
-- Vector Embedding Model: HuggingFace
+- Type Package: Pydantic
+- LLM Models: OpenAI, Google Gemini
 - Financial Data API: YFinance
 - Economic Data API: Pandas Datareader
 
