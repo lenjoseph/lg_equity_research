@@ -8,6 +8,7 @@ from fastapi import HTTPException
 from agents.headline.agent import get_headline_sentiment
 from agents.industry.agent import get_industry_sentiment
 from agents.aggregation.agent import get_aggregated_sentiment
+from logger import get_logger
 from models.state import EquityResearchState
 from agents.fundamentals.agent import get_fundamental_sentiment
 from agents.macro.agent import get_macro_sentiment
@@ -15,12 +16,16 @@ from agents.technical.agent import get_technical_sentiment
 from util import create_cache_policy, validate_ticker
 
 load_dotenv()
+logger = get_logger(__name__)
 
 
 # graph nodes
 def ticker_validation(state: EquityResearchState) -> dict:
     """Validation node to ensure we have a real ticker"""
-    return validate_ticker(ticker=state.ticker, state=state)
+    logger.info(f"Validating ticker: {state.ticker}")
+    result = validate_ticker(ticker=state.ticker, state=state)
+    logger.info(f"Ticker validation complete for {state.ticker}")
+    return result
 
 
 def ticker_router(state: EquityResearchState):
@@ -38,45 +43,57 @@ def ticker_router(state: EquityResearchState):
 
 def fundamental_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate fundamental research sentiment"""
+    logger.info(f"Starting fundamental research for {state.ticker}")
     fundamental_sentiment = get_fundamental_sentiment(
         ticker=state.ticker,
     )
+    logger.info(f"Completed fundamental research for {state.ticker}")
     return {"fundamental_sentiment": fundamental_sentiment}
 
 
 def technical_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate technical research sentiment"""
+    logger.info(f"Starting technical research for {state.ticker}")
     technical_sentiment = get_technical_sentiment(
         ticker=state.ticker,
     )
+    logger.info(f"Completed technical research for {state.ticker}")
     return {"technical_sentiment": technical_sentiment}
 
 
 def macro_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate macro research sentiment"""
+    logger.info("Starting macro research")
     macro_sentiment = get_macro_sentiment()
+    logger.info("Completed macro research")
     return {"macro_sentiment": macro_sentiment}
 
 
 def industry_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate technical research sentiment"""
+    logger.info(f"Starting industry research for {state.ticker}")
     industry_sentiment = get_industry_sentiment(
         ticker=state.ticker,
     )
+    logger.info(f"Completed industry research for {state.ticker}")
     return {"industry_sentiment": industry_sentiment}
 
 
 def headline_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate technical research sentiment"""
+    logger.info(f"Starting headline research for {state.ticker}")
     headline_sentiment = get_headline_sentiment(
         ticker=state.ticker,
     )
+    logger.info(f"Completed headline research for {state.ticker}")
     return {"headline_sentiment": headline_sentiment}
 
 
 def sentiment_aggregator(state: EquityResearchState) -> dict:
     """LLM call to aggregate research findings and synthesize sentiment"""
+    logger.info(f"Starting sentiment aggregation for {state.ticker}")
     combined_sentiment = get_aggregated_sentiment(state)
+    logger.info(f"Completed sentiment aggregation for {state.ticker}")
     return {"combined_sentiment": combined_sentiment}
 
 

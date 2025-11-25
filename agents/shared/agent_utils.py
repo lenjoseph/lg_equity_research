@@ -1,7 +1,8 @@
 from typing import Union
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
-from agents.shared.logger import get_logger
+
+from logger import get_logger
 
 logger = get_logger(__name__)
 
