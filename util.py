@@ -30,7 +30,7 @@ def create_cache_policy(ttl: int, static_key: str | None = None) -> CachePolicy:
     return CachePolicy(key_func=key_func, ttl=ttl)
 
 
-def validate_ticker(ticker: str, state: EquityResearchState) -> bool:
+def validate_ticker(ticker: str, state: EquityResearchState) -> dict:
     try:
         ticker = yf.Ticker(state.ticker)
         # Check if ticker has valid info by attempting to access basic info

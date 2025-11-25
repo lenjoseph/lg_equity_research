@@ -2,6 +2,7 @@ from langchain_core.runnables import RunnableLambda
 from langgraph.graph import END, StateGraph, START
 from langgraph.cache.memory import InMemoryCache
 from dotenv import load_dotenv
+from fastapi import HTTPException
 
 
 from agents.headline.agent import get_headline_sentiment
@@ -183,6 +184,8 @@ def input(input_dict: dict) -> EquityResearchState:
 
 
 def output(state: EquityResearchState) -> EquityResearchState:
+    if not state.is_ticker_valid:
+        raise HTTPException(status_code=400, detail=f"Ticker {state.ticker} is invalid")
     return state
 
 
