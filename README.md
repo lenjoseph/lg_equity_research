@@ -4,14 +4,24 @@ Agentic equity research implemented on LangGraph
 
 # Running Locally
 
-To run the program locally, follow these steps:
+To run the program from the terminal, follow these steps:
 
-1. Initialize a python environment
+1. Initialize a python environment on python version 3.12
 2. Install deps with pip or other python package manager
-3. Hydrate API keys in a new .env file (keys are specified in the env.dev file)
+3. Hydrate env variables in a new .env file (variables are specified in the env.dev file, langsmith is unnecessary for terminal use)
 4. Run `python main.py` from the root of the project
-5. From a separate terminal, execute the following curl command:
+5. From a separate terminal window, execute the following curl command:
    curl -X POST "http://localhost:8000/research-equity" -H "Content-Type: application/json" -d '{"ticker": "TICKER"}'
+
+# Running in LangSmith for Observability
+
+To run the program in Langsmith, which offers observability for graph execution and tracing, follow these steps:
+
+1. Initialize a python environment on python version 3.12
+2. Install deps with pip or other python package manager
+3. Hydrate env variables in a new .env file (variables are specified in the env.dev file, in this case langsmith is needed)
+4. Run `langsmith dev` from the root of the project
+5. A browser window should open showing the built graph and execution controls
 
 # Architecture
 
