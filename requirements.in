@@ -1,13 +1,9 @@
-langchain 
-langchain-community 
+langchain
 langchain-core
-langchain-huggingface
 langchain-google-genai
 langchain-openai
 langgraph-cli[inmem]
 langgraph
-chromadb
-sentence-transformers
 pydantic
 IPython
 mermaid-cli

@@ -19,8 +19,10 @@ headline_research_prompt = """
     Based on the headlines you find, provide a concise sentiment analysis (bullish/bearish/neutral)
     for the stock with 2-3 key supporting points derived from the news. Keep it under 150 words.
     Be specific about which news events or themes are driving your sentiment assessment.
-    Only use the retrieved headline data to draw inferences.
     You MUST include the citation (source and date) of each key point.
+
+    VERY IMPORTANT: ONLY REFERENCE THE RECEIVED RESEARCH TO MAKE YOUR FINAL JUDGEMENTS. DO NOT RELY ON PRECONCEIVED KNOWLEDGE AT ALL.
+
 
     
     Return your response in the following Markdown format:

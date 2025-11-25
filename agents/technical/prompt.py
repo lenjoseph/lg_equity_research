@@ -13,7 +13,7 @@ technical_research_prompt = """
     
     Interpret the indicators to determine price trend and momentum strength.
     
-    Based on this data, provide a concise technical sentiment analysis.
+    VERY IMPORTANT: ONLY REFERENCE THE RECEIVED RESEARCH TO MAKE YOUR FINAL JUDGEMENTS. DO NOT RELY ON PRECONCEIVED KNOWLEDGE AT ALL.
     
     Return your response in the following Markdown format:
     

@@ -13,7 +13,9 @@ research_aggregation_prompt = """
     1. Resummarize the key findings from each research agent (2-3 sentences each)
     2. Identify areas of consensus and divergence across the different analyses
     3. Weight the importance of each perspective based on the current market conditions and the stock's characteristics and industry
-    4. Synthesize all findings into a clear, cohesive overall investment sentiment 
+    4. Synthesize all findings into a clear, cohesive overall investment sentiment
+
+    VERY IMPORTANT: ONLY REFERENCE THE RECEIVED RESEARCH TO MAKE YOUR FINAL JUDGEMENTS. DO NOT RELY ON PRECONCEIVED KNOWLEDGE AT ALL.
     
     Format your response in Markdown as follows (do not use JSON):
     

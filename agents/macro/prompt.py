@@ -12,7 +12,9 @@ macro_research_prompt = """
     for the equity market with 2-3 key supporting points. Keep it under 150 words.
     Be precise about time periods (quarters for GDP, months for CPI and sentiment).
     Focus on current macro conditions and recent trends in inflation, GDP growth, and monetary policy.
-    Only use the retrieved data to draw inferences.
+
+    VERY IMPORTANT: ONLY REFERENCE THE RECEIVED RESEARCH TO MAKE YOUR FINAL JUDGEMENTS. DO NOT RELY ON PRECONCEIVED KNOWLEDGE AT ALL.
+
 
     Return your response in the following Markdown format:
 

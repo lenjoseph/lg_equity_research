@@ -16,7 +16,9 @@ fundamentals_research_prompt = """
     Based on this data, provide a concise fundamental analysis (undervalued/overvalued/fairly valued)
     for the stock with 2-3 key supporting points from the financial metrics. Keep it under 150 words.
     Be specific about which ratios, growth metrics, or financial health indicators support your view.
-    Only use the retrieved fundamental data to draw inferences.
+    
+    VERY IMPORTANT: ONLY REFERENCE THE RECEIVED RESEARCH TO MAKE YOUR FINAL JUDGEMENTS. DO NOT RELY ON PRECONCEIVED KNOWLEDGE AT ALL.
+
     
     Return your response in the following Markdown format:
 
