@@ -1,7 +1,7 @@
 {
   "dependencies": ["./"],
   "graphs": {
-    "equity_research": "./graph.py:parallel_workflow"
+    "equity_research": "./graph.py:graph_workflow"
   },
   "env": ".env"
 }

@@ -102,53 +102,53 @@ cache = InMemoryCache()
 
 
 # build workflow
-parallel_builder = StateGraph(EquityResearchState)
+graph_builder = StateGraph(EquityResearchState)
 
 # add agent nodes
-parallel_builder.add_node("ticker_validation", ticker_validation)
+graph_builder.add_node("ticker_validation", ticker_validation)
 
-parallel_builder.add_node(
+graph_builder.add_node(
     "fundamental_research_agent",
     fundamental_research_agent,
     # evict fundamentals cache after one houe
     # todo: get smart about dynamic cache eviction; set ttl based on last earnings release for ticker
     cache_policy=create_cache_policy(ttl=3600),
 )
-parallel_builder.add_node(
+graph_builder.add_node(
     "technical_research_agent",
     technical_research_agent,
     # evict technical research cache after 5 minutes
     cache_policy=create_cache_policy(ttl=300),
 )
-parallel_builder.add_node(
+graph_builder.add_node(
     "macro_research_agent",
     macro_research_agent,
     # evict macro research cache after one hour
     # todo: get smart about dynamic cache eviction; set ttl based on last fed report issuance
     cache_policy=create_cache_policy(ttl=3600, static_key="macro_research"),
 )
-parallel_builder.add_node(
+graph_builder.add_node(
     "industry_research_agent",
     industry_research_agent,
     # evict industry research cache after one hour
     cache_policy=create_cache_policy(ttl=3600),
 )
 
-parallel_builder.add_node(
+graph_builder.add_node(
     "headline_research_agent",
     headline_research_agent,
     # evict headline research cache after one hour
     cache_policy=create_cache_policy(ttl=3600),
 )
-parallel_builder.add_node(
+graph_builder.add_node(
     "aggregator",
     sentiment_aggregator,
 )
 
 # call research agents in parallel when ticker validation passes, otherwise end
 
-parallel_builder.add_edge(START, "ticker_validation")
-parallel_builder.add_conditional_edges(
+graph_builder.add_edge(START, "ticker_validation")
+graph_builder.add_conditional_edges(
     "ticker_validation",
     ticker_router,
     [
@@ -162,29 +162,29 @@ parallel_builder.add_conditional_edges(
 )
 
 # synthesize sentiment
-parallel_builder.add_edge("fundamental_research_agent", "aggregator")
-parallel_builder.add_edge("technical_research_agent", "aggregator")
-parallel_builder.add_edge("macro_research_agent", "aggregator")
-parallel_builder.add_edge("industry_research_agent", "aggregator")
-parallel_builder.add_edge("headline_research_agent", "aggregator")
+graph_builder.add_edge("fundamental_research_agent", "aggregator")
+graph_builder.add_edge("technical_research_agent", "aggregator")
+graph_builder.add_edge("macro_research_agent", "aggregator")
+graph_builder.add_edge("industry_research_agent", "aggregator")
+graph_builder.add_edge("headline_research_agent", "aggregator")
 
 # terminate graph
-parallel_builder.add_edge("aggregator", END)
+graph_builder.add_edge("aggregator", END)
 
 # compile the graph workflow
-parallel_workflow = parallel_builder.compile(cache=cache)
+graph_workflow = graph_builder.compile(cache=cache)
 
 # uncomment to regenerate architectural diagram
 
 try:
-    png_data = parallel_workflow.get_graph().draw_mermaid_png()
+    png_data = graph_workflow.get_graph().draw_mermaid_png()
     with open("architecture.png", "wb") as f:
         f.write(png_data)
 except Exception as e:
     print(f"Error generating architecture.png: {e}")
     # Fallback to writing mermaid text
     with open("architecture.mmd", "w") as f:
-        f.write(parallel_workflow.get_graph().draw_mermaid())
+        f.write(graph_workflow.get_graph().draw_mermaid())
 
 
 def input(input_dict: dict) -> EquityResearchState:
@@ -210,4 +210,4 @@ def output(state: dict | EquityResearchState) -> EquityResearchState:
 
 
 # pipeline to interface with the API
-research_chain = RunnableLambda(input) | parallel_workflow | RunnableLambda(output)
+research_chain = RunnableLambda(input) | graph_workflow | RunnableLambda(output)
