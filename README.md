@@ -2,6 +2,17 @@
 
 Agentic equity research implemented on LangGraph
 
+# Running Locally
+
+To run the program locally, follow these steps:
+
+1. Initialize a python environment
+2. Install deps with pip or other python package manager
+3. Hydrate API keys in a new .env file (keys are specified in the env.dev file)
+4. Run `python main.py` from the root of the project
+5. From a separate terminal, execute the following curl command:
+   curl -X POST "http://localhost:8000/research-equity" -H "Content-Type: application/json" -d '{"ticker": "TICKER"}'
+
 # Architecture
 
 This app implements an agentic ai architecture to compile equity research on a single stock across different analytical lenses
