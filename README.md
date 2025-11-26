@@ -1,6 +1,6 @@
-# lg_equity_research
+# Langgraph Equity Research
 
-Agentic equity research implemented on LangGraph
+Agentic equity research implemented on LangGraph, yfinance, and FastAPI
 
 # Running Locally
 
