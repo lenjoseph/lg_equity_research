@@ -107,6 +107,8 @@ idna==3.11
     #   requests
 importlib-metadata==8.7.0
     # via opentelemetry-api
+iniconfig==2.3.0
+    # via pytest
 ipython==9.7.0
     # via -r requirements.in
 ipython-pygments-lexers==1.1.1
@@ -214,6 +216,7 @@ packaging==25.0
     # via
     #   langchain-core
     #   langsmith
+    #   pytest
 pandas==2.3.3
     # via
     #   pandas-datareader
@@ -230,6 +233,8 @@ platformdirs==4.5.0
     # via yfinance
 playwright==1.56.0
     # via mermaid-cli
+pluggy==1.6.0
+    # via pytest
 prompt-toolkit==3.0.52
     # via ipython
 proto-plus==1.26.1
@@ -277,8 +282,11 @@ pygments==2.19.2
     # via
     #   ipython
     #   ipython-pygments-lexers
+    #   pytest
 pyjwt==2.10.1
     # via langgraph-api
+pytest==9.0.1
+    # via -r requirements.in
 python-dateutil==2.9.0.post0
     # via pandas
 python-dotenv==1.2.1

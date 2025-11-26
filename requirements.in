@@ -4,6 +4,7 @@ langchain-google-genai
 langchain-openai
 langgraph-cli[inmem]
 langgraph
+pytest
 pydantic
 IPython
 mermaid-cli
