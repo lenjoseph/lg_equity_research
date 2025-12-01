@@ -188,6 +188,7 @@ graph_workflow = graph_builder.compile(cache=cache)
 def input(input_dict: dict) -> EquityResearchState:
     state = EquityResearchState(
         ticker=input_dict["ticker"],
+        trade_duration=input_dict["trade_duration"],
         fundamental_sentiment="",
         technical_sentiment="",
         macro_sentiment="",
