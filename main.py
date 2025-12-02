@@ -28,7 +28,11 @@ def ping():
 @app.post("/research-equity")
 async def research_equity(req: EquityResearchRequest):
     res = research_chain.invoke(
-        {"ticker": req.ticker, "trade_duration": req.trade_duration}
+        {
+            "ticker": req.ticker,
+            "trade_duration": req.trade_duration,
+            "trade_direction": req.trade_direction,
+        }
     )
     return {
         "ticker": res.ticker,

@@ -211,6 +211,7 @@ def input(input_dict: dict) -> EquityResearchState:
     state = EquityResearchState(
         ticker=input_dict["ticker"],
         trade_duration=input_dict["trade_duration"],
+        trade_direction=input_dict["trade_direction"],
         fundamental_sentiment="",
         technical_sentiment="",
         macro_sentiment="",

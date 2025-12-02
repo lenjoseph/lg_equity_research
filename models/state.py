@@ -9,11 +9,17 @@ class TradeDuration(Enum):
     POSITION_TRADE = "position_trade"
 
 
+class TradeDirection(Enum):
+    SHORT = "short"
+    LONG = "long"
+
+
 class EquityResearchState(BaseModel):
     """State model for the equity research workflow."""
 
     ticker: str
     trade_duration: TradeDuration
+    trade_direction: TradeDirection
     fundamental_sentiment: Optional[str] = None
     technical_sentiment: Optional[str] = None
     macro_sentiment: Optional[str] = None

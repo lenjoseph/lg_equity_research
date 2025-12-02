@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from enum import Enum
 
-from models.state import TradeDuration
+from models.state import TradeDirection, TradeDuration
 
 
 class EquityResearchRequest(BaseModel):
@@ -9,3 +9,4 @@ class EquityResearchRequest(BaseModel):
 
     ticker: str
     trade_duration: TradeDuration
+    trade_direction: TradeDirection
