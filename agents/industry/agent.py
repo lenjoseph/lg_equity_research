@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from agents.industry.prompt import industry_research_prompt
 from agents.shared.llm_models import LLM_MODELS, get_google_llm
+from models.agent import IndustrySentimentOutput
 
 
 dotenv.load_dotenv()
@@ -28,7 +29,7 @@ def get_industry_sentiment(ticker: str, industry: str):
         model=LLM_MODELS["google"],
         temperature=0.0,
         with_search_grounding=True,
-    )
+    ).with_structured_output(IndustrySentimentOutput)
 
     result = llm.invoke(prompt)
-    return result.content
+    return result

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from agents.peer.prompt import peer_research_prompt
 from agents.shared.llm_models import LLM_MODELS, get_google_llm
+from models.agent import PeerSentimentOutput
 
 
 dotenv.load_dotenv()
@@ -26,7 +27,7 @@ def get_peer_sentiment(business: str):
         model=LLM_MODELS["google"],
         temperature=0.0,
         with_search_grounding=True,
-    )
+    ).with_structured_output(PeerSentimentOutput)
 
     result = llm.invoke(prompt)
-    return result.content
+    return result

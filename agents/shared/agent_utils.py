@@ -1,6 +1,7 @@
-from typing import Union
+from typing import Optional, Type, Union
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
+from pydantic import BaseModel
 
 from logger import get_logger
 
@@ -11,6 +12,7 @@ def run_agent_with_tools(
     llm: Union[ChatOpenAI, ChatGoogleGenerativeAI],
     prompt: str,
     tools: list = [],
+    output_schema: Optional[Type[BaseModel]] = None,
 ):
     """
     Generic agent executor that handles tool calling flow.
@@ -19,14 +21,15 @@ def run_agent_with_tools(
         llm: The llm model to use for the agent
         prompt: The prompt to send to the LLM
         tools: List of tools to bind to the LLM
+        output_schema: Optional Pydantic model for structured output
 
     Returns:
-        The final LLM response content after executing any tool calls
+        The final LLM response (structured if output_schema provided, else content string)
     """
     try:
         tools_map = {tool.name: tool for tool in tools}
 
-        llm_with_tools = llm.bind_tools(tools)
+        llm_with_tools = llm.bind_tools(tools) if tools else llm
 
         # initial invocation
         response = llm_with_tools.invoke(prompt)
@@ -59,11 +62,21 @@ def run_agent_with_tools(
             ]
 
             # Second LLM call with tool results to get the analysis
-            final_response = llm_with_tools.invoke(messages)
-            return final_response.content
+            if output_schema:
+                structured_llm = llm.with_structured_output(output_schema)
+                final_response = structured_llm.invoke(messages)
+                return final_response
+            else:
+                final_response = llm_with_tools.invoke(messages)
+                return final_response.content
         else:
             # No tool call, return the response
-            return response.content
+            if output_schema:
+                structured_llm = llm.with_structured_output(output_schema)
+                final_response = structured_llm.invoke(prompt)
+                return final_response
+            else:
+                return response.content
     except Exception as e:
         logger.error(f"Error in run_agent_with_tools: {e}", exc_info=True)
         return f"Error executing agent: {str(e)}"

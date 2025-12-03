@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from agents.headline.prompt import headline_research_prompt
 from agents.shared.llm_models import LLM_MODELS, get_google_llm
+from models.agent import HeadlineSentimentOutput
 
 
 dotenv.load_dotenv()
@@ -27,7 +28,7 @@ def get_headline_sentiment(business: str):
         model=LLM_MODELS["google"],
         temperature=0.0,
         with_search_grounding=True,
-    )
+    ).with_structured_output(HeadlineSentimentOutput)
 
     result = llm.invoke(prompt)
-    return result.content
+    return result

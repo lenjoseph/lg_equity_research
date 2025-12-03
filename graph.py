@@ -21,6 +21,7 @@ from util import (
     create_technical_cache_policy,
     create_macro_cache_policy,
     draw_architecture,
+    format_sentiment_output,
     validate_ticker,
 )
 
@@ -60,7 +61,7 @@ def fundamental_research_agent(state: EquityResearchState) -> dict:
             cached_info=state.ticker_info,  # Pass cached yfinance info to avoid duplicate API call
         )
         logger.info(f"Completed fundamental research for {state.ticker}")
-        return {"fundamental_sentiment": fundamental_sentiment}
+        return {"fundamental_sentiment": format_sentiment_output(fundamental_sentiment)}
     except Exception as e:
         logger.error(
             f"Fundamental research failed for {state.ticker}: {e}", exc_info=True
@@ -78,7 +79,7 @@ def technical_research_agent(state: EquityResearchState) -> dict:
             ticker=state.ticker,
         )
         logger.info(f"Completed technical research for {state.ticker}")
-        return {"technical_sentiment": technical_sentiment}
+        return {"technical_sentiment": format_sentiment_output(technical_sentiment)}
     except Exception as e:
         logger.error(
             f"Technical research failed for {state.ticker}: {e}", exc_info=True
@@ -94,7 +95,7 @@ def macro_research_agent(state: EquityResearchState) -> dict:
     try:
         macro_sentiment = get_macro_sentiment()
         logger.info("Completed macro research")
-        return {"macro_sentiment": macro_sentiment}
+        return {"macro_sentiment": format_sentiment_output(macro_sentiment)}
     except Exception as e:
         logger.error(f"Macro research failed: {e}", exc_info=True)
         return {"macro_sentiment": "Analysis unavailable due to data retrieval error."}
@@ -108,7 +109,7 @@ def industry_research_agent(state: EquityResearchState) -> dict:
             ticker=state.ticker, industry=state.industry
         )
         logger.info(f"Completed industry research for {state.ticker}")
-        return {"industry_sentiment": industry_sentiment}
+        return {"industry_sentiment": format_sentiment_output(industry_sentiment)}
     except Exception as e:
         logger.error(f"Industry research failed for {state.ticker}: {e}", exc_info=True)
         return {
@@ -122,7 +123,7 @@ def peer_research_agent(state: EquityResearchState) -> dict:
     try:
         peer_sentiment = get_peer_sentiment(business=state.business)
         logger.info(f"Completed peer research for {state.business}")
-        return {"peer_sentiment": peer_sentiment}
+        return {"peer_sentiment": format_sentiment_output(peer_sentiment)}
     except Exception as e:
         logger.error(f"Peer research failed for {state.business}: {e}", exc_info=True)
         return {"peer_sentiment": "Analysis unavailable due to data retrieval error."}
@@ -136,7 +137,7 @@ def headline_research_agent(state: EquityResearchState) -> dict:
             business=state.business,
         )
         logger.info(f"Completed headline research for {state.business}")
-        return {"headline_sentiment": headline_sentiment}
+        return {"headline_sentiment": format_sentiment_output(headline_sentiment)}
     except Exception as e:
         logger.error(
             f"Headline research failed for {state.business}: {e}", exc_info=True
