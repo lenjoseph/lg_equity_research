@@ -15,7 +15,14 @@ from models.state import EquityResearchState
 from agents.fundamentals.agent import get_fundamental_sentiment
 from agents.macro.agent import get_macro_sentiment
 from agents.technical.agent import get_technical_sentiment
-from util import create_cache_policy, draw_architecture, validate_ticker
+from util import (
+    create_cache_policy,
+    create_fundamentals_cache_policy,
+    create_technical_cache_policy,
+    create_macro_cache_policy,
+    draw_architecture,
+    validate_ticker,
+)
 
 load_dotenv()
 logger = get_logger(__name__)
@@ -199,24 +206,22 @@ graph_builder.add_node("ticker_validation", ticker_validation)
 graph_builder.add_node(
     "fundamental_research_agent",
     fundamental_research_agent,
-    # evict fundamentals cache after one houe
-    # todo: get smart about dynamic cache eviction; set ttl based on last earnings release for ticker
-    cache_policy=create_cache_policy(ttl=3600),
+    # Dynamic cache: shorter TTL when earnings are imminent, key changes on earnings status
+    cache_policy=create_fundamentals_cache_policy(),
 )
 
 graph_builder.add_node(
     "technical_research_agent",
     technical_research_agent,
-    # evict technical research cache after 5 minutes
-    cache_policy=create_cache_policy(ttl=300),
+    # Dynamic cache: key includes hour bucket for time-sensitive price data
+    cache_policy=create_technical_cache_policy(),
 )
 
 graph_builder.add_node(
     "macro_research_agent",
     macro_research_agent,
-    # evict macro research cache after one hour
-    # todo: get smart about dynamic cache eviction; set ttl based on last fed report issuance
-    cache_policy=create_cache_policy(ttl=3600, static_key="macro_research"),
+    # Dynamic cache: key includes date bucket for daily invalidation
+    cache_policy=create_macro_cache_policy(),
 )
 
 graph_builder.add_node(
