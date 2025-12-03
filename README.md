@@ -58,6 +58,15 @@ An evaluator agent reviews the aggregator's output and determines whether it com
 - Financial Data API: YFinance
 - Economic Data API: Pandas Datareader
 
+# API Definition
+
+The API exposes one POST enpoint at `/research-equity`
+This endpoint requires three params:
+
+- ticker: The stock ticker being researched. It must be a publically traded company to pass validation (e.g. "AAPL")
+- trade_direction: The trade bias ("long" or "short")
+- trade_duration: The intended duration for the trade ("day_trade", "swing_trade", or "position_trade")
+
 # AI Agent Descriptions
 
 1. Technical Researcher - Focuses on technical price data over fixed timeframes
