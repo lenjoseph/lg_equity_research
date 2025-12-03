@@ -3,6 +3,7 @@ from typing import Dict, Tuple, Optional
 
 import pandas as pd
 import pandas_datareader as pdr
+import requests
 from langchain_core.tools import Tool
 
 from models.tools import (
@@ -11,6 +12,16 @@ from models.tools import (
     MacroDataResponse,
     MacroDataInput,
 )
+
+# Default timeout for FRED API calls (in seconds)
+DEFAULT_FRED_TIMEOUT = 30
+
+
+def _get_fred_session() -> requests.Session:
+    """Get a requests session with timeout for FRED API calls."""
+    session = requests.Session()
+    session.timeout = DEFAULT_FRED_TIMEOUT
+    return session
 
 
 # Configuration for macroeconomic indicators
@@ -33,8 +44,9 @@ def _fetch_indicator_data(
     Fetch and process data for a single macroeconomic indicator from FRED.
     """
     try:
-        # Fetch data from FRED
-        data = pdr.DataReader(code, "fred", start_date, end_date)
+        # Fetch data from FRED with timeout-configured session
+        session = _get_fred_session()
+        data = pdr.DataReader(code, "fred", start_date, end_date, session=session)
 
         if data.empty:
             return IndicatorData(
@@ -92,11 +104,13 @@ def _calculate_yoy_inflation(current_cpi: float, end_date: datetime) -> Optional
     try:
         year_ago = end_date - timedelta(days=365)
         # Fetch a 60-day window around the target date to ensure we catch the monthly release
+        session = _get_fred_session()
         cpi_year_ago_data = pdr.DataReader(
             "CPIAUCSL",
             "fred",
             year_ago - timedelta(days=30),
             year_ago + timedelta(days=30),
+            session=session,
         )
         if not cpi_year_ago_data.empty:
             cpi_year_ago = cpi_year_ago_data.iloc[-1, 0]
