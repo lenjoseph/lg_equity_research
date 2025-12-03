@@ -47,79 +47,137 @@ def ticker_router(state: EquityResearchState):
 def fundamental_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate fundamental research sentiment"""
     logger.info(f"Starting fundamental research for {state.ticker}")
-    fundamental_sentiment = get_fundamental_sentiment(
-        ticker=state.ticker,
-        cached_info=state.ticker_info,  # Pass cached yfinance info to avoid duplicate API call
-    )
-    logger.info(f"Completed fundamental research for {state.ticker}")
-    return {"fundamental_sentiment": fundamental_sentiment}
+    try:
+        fundamental_sentiment = get_fundamental_sentiment(
+            ticker=state.ticker,
+            cached_info=state.ticker_info,  # Pass cached yfinance info to avoid duplicate API call
+        )
+        logger.info(f"Completed fundamental research for {state.ticker}")
+        return {"fundamental_sentiment": fundamental_sentiment}
+    except Exception as e:
+        logger.error(
+            f"Fundamental research failed for {state.ticker}: {e}", exc_info=True
+        )
+        return {
+            "fundamental_sentiment": "Analysis unavailable due to data retrieval error."
+        }
 
 
 def technical_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate technical research sentiment"""
     logger.info(f"Starting technical research for {state.ticker}")
-    technical_sentiment = get_technical_sentiment(
-        ticker=state.ticker,
-    )
-    logger.info(f"Completed technical research for {state.ticker}")
-    return {"technical_sentiment": technical_sentiment}
+    try:
+        technical_sentiment = get_technical_sentiment(
+            ticker=state.ticker,
+        )
+        logger.info(f"Completed technical research for {state.ticker}")
+        return {"technical_sentiment": technical_sentiment}
+    except Exception as e:
+        logger.error(
+            f"Technical research failed for {state.ticker}: {e}", exc_info=True
+        )
+        return {
+            "technical_sentiment": "Analysis unavailable due to data retrieval error."
+        }
 
 
 def macro_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate macro research sentiment"""
     logger.info("Starting macro research")
-    macro_sentiment = get_macro_sentiment()
-    logger.info("Completed macro research")
-    return {"macro_sentiment": macro_sentiment}
+    try:
+        macro_sentiment = get_macro_sentiment()
+        logger.info("Completed macro research")
+        return {"macro_sentiment": macro_sentiment}
+    except Exception as e:
+        logger.error(f"Macro research failed: {e}", exc_info=True)
+        return {"macro_sentiment": "Analysis unavailable due to data retrieval error."}
 
 
 def industry_research_agent(state: EquityResearchState) -> dict:
-    """LLM call to generate technical research sentiment"""
+    """LLM call to generate industry research sentiment"""
     logger.info(f"Starting industry research for {state.ticker}")
-    industry_sentiment = get_industry_sentiment(
-        ticker=state.ticker, industry=state.industry
-    )
-    logger.info(f"Completed industry research for {state.ticker}")
-    return {"industry_sentiment": industry_sentiment}
+    try:
+        industry_sentiment = get_industry_sentiment(
+            ticker=state.ticker, industry=state.industry
+        )
+        logger.info(f"Completed industry research for {state.ticker}")
+        return {"industry_sentiment": industry_sentiment}
+    except Exception as e:
+        logger.error(f"Industry research failed for {state.ticker}: {e}", exc_info=True)
+        return {
+            "industry_sentiment": "Analysis unavailable due to data retrieval error."
+        }
 
 
 def peer_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate peer research sentiment"""
     logger.info(f"Starting peer research for {state.business}")
-    peer_sentiment = get_peer_sentiment(business=state.business)
-    logger.info(f"Completed peer research for {state.business}")
-    return {"peer_sentiment": peer_sentiment}
+    try:
+        peer_sentiment = get_peer_sentiment(business=state.business)
+        logger.info(f"Completed peer research for {state.business}")
+        return {"peer_sentiment": peer_sentiment}
+    except Exception as e:
+        logger.error(f"Peer research failed for {state.business}: {e}", exc_info=True)
+        return {"peer_sentiment": "Analysis unavailable due to data retrieval error."}
 
 
 def headline_research_agent(state: EquityResearchState) -> dict:
-    """LLM call to generate technical research sentiment"""
+    """LLM call to generate headline research sentiment"""
     logger.info(f"Starting headline research for {state.business}")
-    headline_sentiment = get_headline_sentiment(
-        business=state.business,
-    )
-    logger.info(f"Completed headline research for {state.business}")
-    return {"headline_sentiment": headline_sentiment}
+    try:
+        headline_sentiment = get_headline_sentiment(
+            business=state.business,
+        )
+        logger.info(f"Completed headline research for {state.business}")
+        return {"headline_sentiment": headline_sentiment}
+    except Exception as e:
+        logger.error(
+            f"Headline research failed for {state.business}: {e}", exc_info=True
+        )
+        return {
+            "headline_sentiment": "Analysis unavailable due to data retrieval error."
+        }
 
 
 def sentiment_aggregator(state: EquityResearchState) -> dict:
     """LLM call to aggregate research findings and synthesize sentiment"""
     logger.info(f"Starting sentiment aggregation for {state.ticker}")
-    combined_sentiment = get_aggregated_sentiment(state)
-    logger.info(f"Completed sentiment aggregation for {state.ticker}")
-    return {"combined_sentiment": combined_sentiment}
+    try:
+        combined_sentiment = get_aggregated_sentiment(state)
+        logger.info(f"Completed sentiment aggregation for {state.ticker}")
+        return {"combined_sentiment": combined_sentiment}
+    except Exception as e:
+        logger.error(
+            f"Sentiment aggregation failed for {state.ticker}: {e}", exc_info=True
+        )
+        return {
+            "combined_sentiment": (
+                f"**Conclusion:** Unable to fully synthesize sentiment due to an internal error. "
+                f"Please review individual research components for partial analysis."
+            )
+        }
 
 
 def sentiment_evaluator(state: EquityResearchState) -> dict:
     """LLM call to evaluate sentiment aggregator output"""
-    logger.info("starting sentiment evaluation")
-    sentiment_evaluation = evaluate_aggregated_sentement(
-        sentiment=state.combined_sentiment
-    )
-    logger.info("Completed sentiment evaluation")
-    sentiment_evaluation["revision_iteration_count"] = (
-        state.revision_iteration_count + 1
-    )
-    return sentiment_evaluation
+    logger.info("Starting sentiment evaluation")
+    try:
+        sentiment_evaluation = evaluate_aggregated_sentement(
+            sentiment=state.combined_sentiment
+        )
+        logger.info("Completed sentiment evaluation")
+        sentiment_evaluation["revision_iteration_count"] = (
+            state.revision_iteration_count + 1
+        )
+        return sentiment_evaluation
+    except Exception as e:
+        logger.error(f"Sentiment evaluation failed: {e}", exc_info=True)
+        # Mark as compliant to avoid infinite retry loops, but log the failure
+        return {
+            "compliant": True,
+            "feedback": "Evaluation skipped due to internal error.",
+            "revision_iteration_count": state.revision_iteration_count + 1,
+        }
 
 
 def sentiment_router(state: EquityResearchState):
