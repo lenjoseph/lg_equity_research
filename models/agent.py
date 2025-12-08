@@ -143,3 +143,26 @@ class AggregatorFeedback(BaseModel):
     feedback: str = Field(
         description="If the output is noncompliant, provide feedback on how to address the delta. Otherwise do not include feedback"
     )
+
+
+# ============================================================================
+# SEC Filing Models
+# ============================================================================
+
+
+class FilingMetadata(BaseModel):
+    ticker: str
+    filing_type: str
+    filing_date: str
+    accession_number: str
+    url: str
+
+
+class FilingChunk(BaseModel):
+    text: str
+    ticker: str
+    filing_type: str
+    section: str
+    filing_date: str
+    accession_number: str
+    chunk_index: int
