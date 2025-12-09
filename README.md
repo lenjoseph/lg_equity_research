@@ -47,13 +47,14 @@ This app implements an agentic ai architecture to compile equity research on a s
 
 ![Architecture Diagram](/architecture.png)
 
-The app structures ai agents as research domain specialists that perform data gathering and analysis scoped to their respective domain. The filing agent implements a RAG architecture to analyze relevant SEC filings.
+The app structures AI agents as research domain specialists that perform data gathering and analysis scoped to their respective domain. The filings agent implements a RAG architecture to analyze relevant SEC filings.
 The app manages state through langgraph's graph state model.
-The graph implements a node-based cache that configures cache keys and ttl at the agent level.
-The entrypoint of the graph vaidates that the ticker is valid using yfinance.
-Once the ticker is vaidated, research agents are executed in parallel.
-When all agents have executed, a aggregator agent synthesizes overall sentiment for the stock.
-An evaluator agent reviews the aggregator's output and determines whether it complies with criteria. If not, it provides feedback for revision.
+The graph implements node-level caching with configurable TTLs and dynamic cache policies per agent.
+The entrypoint of the graph validates that the ticker is valid using yfinance.
+Once validated, SEC filings are ingested into a vector store.
+After filings ingestion, seven research agents execute in parallel: fundamental, technical, macro, industry, peer, headline, and filings.
+When all agents have completed, an aggregator agent synthesizes overall sentiment for the stock.
+An evaluator agent reviews the aggregator's output for compliance. If non-compliant, it provides feedback and the aggregator revises (up to 3 iterations).
 
 # Architecture Components
 
