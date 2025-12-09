@@ -3,8 +3,10 @@ import re
 import time
 
 # Suppress gRPC/absl logging before importing anything that uses it
+# Ensure huggingface tokenizer thread pool doesn't fork when graph executes parallel agents
 os.environ["GRPC_VERBOSITY"] = "ERROR"
 os.environ["GLOG_minloglevel"] = "2"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware

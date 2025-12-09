@@ -37,6 +37,9 @@ class EquityResearchState(BaseModel):
     is_ticker_valid: bool = False
     revision_iteration_count: int = 0
     ticker_info: Optional[Dict[str, Any]] = None  # Cached yfinance ticker.info
+    filings_ingested: bool = (
+        False  # Whether SEC filings have been ingested to vector store
+    )
     metrics: Annotated[RequestMetrics, merge_metrics] = Field(
         default_factory=RequestMetrics
     )

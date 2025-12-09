@@ -31,23 +31,6 @@ SEARCH_TOPICS = [
 ]
 
 
-def ensure_filings_ingested(ticker: str, years: int = 2) -> bool:
-    """
-    Ensure filings are ingested for a ticker.
-
-    Returns True if ingestion was performed, False if filings already existed.
-    """
-    if collection_exists(ticker):
-        stats = get_collection_stats(ticker)
-        if stats.get("document_count", 0) > 0:
-            logger.info(f"Filings already ingested for {ticker}: {stats}")
-            return False
-
-    logger.info(f"Ingesting filings for {ticker}...")
-    result = ingest_ticker_filings(ticker, years=years)
-    return True
-
-
 def _gather_filing_context(
     ticker: str, top_k_per_topic: int = 3
 ) -> list[FilingSearchResult]:
@@ -98,9 +81,6 @@ def get_filings_sentiment(
     start_time = time.perf_counter()
     model = LLM_MODELS["open_ai_smart"]
     token_usage = TokenUsage()
-
-    # Ensure filings are ingested
-    ensure_filings_ingested(ticker)
 
     # Check if we have any filings
     if not collection_exists(ticker):

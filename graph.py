@@ -11,6 +11,7 @@ from agents.headline.agent import get_headline_sentiment
 from agents.industry.agent import get_industry_sentiment
 from agents.peer.agent import get_peer_sentiment
 from agents.aggregation.agent import get_aggregated_sentiment
+from data.util.ingest_sec_filings import ensure_filings_ingested
 from logger import get_logger
 from models.metrics import RequestMetrics
 from models.state import EquityResearchState
@@ -40,19 +41,42 @@ def ticker_validation(state: EquityResearchState) -> dict:
     return result
 
 
+def filings_ingestion(state: EquityResearchState) -> dict:
+    """Ingest SEC filings into vector store before research agents run"""
+    logger.info(f"Starting SEC filings ingestion for {state.ticker}")
+    try:
+        was_ingested = ensure_filings_ingested(ticker=state.ticker)
+        if was_ingested:
+            logger.info(f"SEC filings ingested for {state.ticker}")
+        else:
+            logger.info(f"SEC filings already available for {state.ticker}")
+        return {"filings_ingested": True}
+    except Exception as e:
+        logger.error(
+            f"SEC filings ingestion failed for {state.ticker}: {e}", exc_info=True
+        )
+        return {"filings_ingested": False}
+
+
 def ticker_router(state: EquityResearchState):
+    """Route to filings ingestion if ticker is valid, otherwise end"""
     if state.is_ticker_valid:
-        return [
-            "fundamental_research_agent",
-            "technical_research_agent",
-            "macro_research_agent",
-            "industry_research_agent",
-            "peer_research_agent",
-            "headline_research_agent",
-            "filings_research_agent",
-        ]
+        return "filings_ingestion"
     else:
         return END
+
+
+def filings_ingestion_router(state: EquityResearchState):
+    """Route to all research agents in parallel after filings ingestion"""
+    return [
+        "fundamental_research_agent",
+        "technical_research_agent",
+        "macro_research_agent",
+        "industry_research_agent",
+        "peer_research_agent",
+        "headline_research_agent",
+        "filings_research_agent",
+    ]
 
 
 def fundamental_research_agent(state: EquityResearchState) -> dict:
@@ -274,6 +298,7 @@ graph_builder = StateGraph(EquityResearchState)
 
 # add agent nodes
 graph_builder.add_node("ticker_validation", ticker_validation)
+graph_builder.add_node("filings_ingestion", filings_ingestion)
 
 graph_builder.add_node(
     "fundamental_research_agent",
@@ -331,11 +356,17 @@ graph_builder.add_node(
 
 graph_builder.add_node("evaluator", sentiment_evaluator)
 
-# call research agents in parallel when ticker validation passes, otherwise end
+# validate ticker, ingest filings, then call research agents in parallel
 graph_builder.add_edge(START, "ticker_validation")
 graph_builder.add_conditional_edges(
     "ticker_validation",
     ticker_router,
+    ["filings_ingestion", END],
+)
+# ingest SEC filings before research agents run, then fan out to all agents
+graph_builder.add_conditional_edges(
+    "filings_ingestion",
+    filings_ingestion_router,
     [
         "fundamental_research_agent",
         "technical_research_agent",
@@ -344,7 +375,6 @@ graph_builder.add_conditional_edges(
         "peer_research_agent",
         "headline_research_agent",
         "filings_research_agent",
-        END,
     ],
 )
 # synthesize sentiment
@@ -393,6 +423,7 @@ def input(input_dict: dict) -> EquityResearchState:
         is_ticker_valid=False,
         revision_iteration_count=0,
         ticker_info=None,  # Will be populated by ticker_validation node
+        filings_ingested=False,  # Will be populated by filings_ingestion node
         metrics=metrics,
     )
     return state

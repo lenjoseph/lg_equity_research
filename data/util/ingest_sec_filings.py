@@ -9,6 +9,7 @@ from data.util.fetch_sec_filings import download_filing, fetch_filing_list
 from data.util.filing_chunker import chunk_filing
 from data.util.parse_sec_filing import parse_filing
 from data.util.vector_store import (
+    get_collection_stats,
     get_or_create_collection,
     collection_exists,
 )
@@ -53,6 +54,23 @@ def _delete_cached_filing(metadata: FilingMetadata) -> None:
         if ticker_dir.exists() and not any(ticker_dir.iterdir()):
             ticker_dir.rmdir()
             logger.debug(f"Removed empty directory: {ticker_dir}")
+
+
+def ensure_filings_ingested(ticker: str, years: int = 2) -> bool:
+    """
+    Ensure filings are ingested for a ticker.
+
+    Returns True if ingestion was performed, False if filings already existed.
+    """
+    if collection_exists(ticker):
+        stats = get_collection_stats(ticker)
+        if stats.get("document_count", 0) > 0:
+            logger.info(f"Filings already ingested for {ticker}: {stats}")
+            return False
+
+    logger.info(f"Ingesting filings for {ticker}...")
+    result = ingest_ticker_filings(ticker, years=years)
+    return True
 
 
 def _get_ingested_accession_numbers(ticker: str) -> set[str]:
