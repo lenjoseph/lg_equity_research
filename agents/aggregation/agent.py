@@ -1,15 +1,29 @@
+import time
+from typing import Tuple
+
 import dotenv
 
 from agents.aggregation.prompt import research_aggregation_prompt
 from models.state import EquityResearchState
 from agents.shared.agent_utils import run_agent_with_tools
 from agents.shared.llm_models import LLM_MODELS, get_openai_llm
+from models.metrics import AgentMetrics
 
 
 dotenv.load_dotenv()
 
+AGENT_NAME = "aggregation"
 
-def get_aggregated_sentiment(state: EquityResearchState):
+
+def get_aggregated_sentiment(state: EquityResearchState) -> Tuple[str, AgentMetrics]:
+    """
+    Aggregate sentiment from all research agents.
+
+    Returns:
+        Tuple of (aggregated sentiment string, AgentMetrics)
+    """
+    start_time = time.perf_counter()
+    model = LLM_MODELS["open_ai_smart"]
 
     if state.feedback:
         prompt = f"Your original response: {state.combined_sentiment}. Revise your response based on this feedback: {state.feedback}"
@@ -26,7 +40,14 @@ def get_aggregated_sentiment(state: EquityResearchState):
         prompt += f"Headline Analysis:\n{state.headline_sentiment}\n\n"
         prompt += f"SEC Filings Analysis:\n{state.filings_sentiment}\n\n"
 
-    llm = get_openai_llm(model=LLM_MODELS["open_ai_smart"], temperature=0.2)
-    result = run_agent_with_tools(llm, prompt)
+    llm = get_openai_llm(model=model, temperature=0.2)
+    result, token_usage = run_agent_with_tools(llm, prompt, track_tokens=True)
 
-    return result
+    latency_ms = (time.perf_counter() - start_time) * 1000
+    metrics = AgentMetrics(
+        agent_name=AGENT_NAME,
+        latency_ms=latency_ms,
+        token_usage=token_usage,
+        model=model,
+    )
+    return result, metrics

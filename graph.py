@@ -12,6 +12,7 @@ from agents.industry.agent import get_industry_sentiment
 from agents.peer.agent import get_peer_sentiment
 from agents.aggregation.agent import get_aggregated_sentiment
 from logger import get_logger
+from models.metrics import RequestMetrics
 from models.state import EquityResearchState
 from agents.fundamentals.agent import get_fundamental_sentiment
 from agents.macro.agent import get_macro_sentiment
@@ -58,12 +59,17 @@ def fundamental_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate fundamental research sentiment"""
     logger.info(f"Starting fundamental research for {state.ticker}")
     try:
-        fundamental_sentiment = get_fundamental_sentiment(
+        fundamental_sentiment, agent_metrics = get_fundamental_sentiment(
             ticker=state.ticker,
             cached_info=state.ticker_info,  # Pass cached yfinance info to avoid duplicate API call
         )
         logger.info(f"Completed fundamental research for {state.ticker}")
-        return {"fundamental_sentiment": format_sentiment_output(fundamental_sentiment)}
+        metrics = state.metrics.model_copy(deep=True)
+        metrics.add_agent_metrics(agent_metrics)
+        return {
+            "fundamental_sentiment": format_sentiment_output(fundamental_sentiment),
+            "metrics": metrics,
+        }
     except Exception as e:
         logger.error(
             f"Fundamental research failed for {state.ticker}: {e}", exc_info=True
@@ -77,11 +83,16 @@ def technical_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate technical research sentiment"""
     logger.info(f"Starting technical research for {state.ticker}")
     try:
-        technical_sentiment = get_technical_sentiment(
+        technical_sentiment, agent_metrics = get_technical_sentiment(
             ticker=state.ticker,
         )
         logger.info(f"Completed technical research for {state.ticker}")
-        return {"technical_sentiment": format_sentiment_output(technical_sentiment)}
+        metrics = state.metrics.model_copy(deep=True)
+        metrics.add_agent_metrics(agent_metrics)
+        return {
+            "technical_sentiment": format_sentiment_output(technical_sentiment),
+            "metrics": metrics,
+        }
     except Exception as e:
         logger.error(
             f"Technical research failed for {state.ticker}: {e}", exc_info=True
@@ -95,9 +106,14 @@ def macro_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate macro research sentiment"""
     logger.info("Starting macro research")
     try:
-        macro_sentiment = get_macro_sentiment()
+        macro_sentiment, agent_metrics = get_macro_sentiment()
         logger.info("Completed macro research")
-        return {"macro_sentiment": format_sentiment_output(macro_sentiment)}
+        metrics = state.metrics.model_copy(deep=True)
+        metrics.add_agent_metrics(agent_metrics)
+        return {
+            "macro_sentiment": format_sentiment_output(macro_sentiment),
+            "metrics": metrics,
+        }
     except Exception as e:
         logger.error(f"Macro research failed: {e}", exc_info=True)
         return {"macro_sentiment": "Analysis unavailable due to data retrieval error."}
@@ -107,11 +123,16 @@ def industry_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate industry research sentiment"""
     logger.info(f"Starting industry research for {state.ticker}")
     try:
-        industry_sentiment = get_industry_sentiment(
+        industry_sentiment, agent_metrics = get_industry_sentiment(
             ticker=state.ticker, industry=state.industry
         )
         logger.info(f"Completed industry research for {state.ticker}")
-        return {"industry_sentiment": format_sentiment_output(industry_sentiment)}
+        metrics = state.metrics.model_copy(deep=True)
+        metrics.add_agent_metrics(agent_metrics)
+        return {
+            "industry_sentiment": format_sentiment_output(industry_sentiment),
+            "metrics": metrics,
+        }
     except Exception as e:
         logger.error(f"Industry research failed for {state.ticker}: {e}", exc_info=True)
         return {
@@ -123,9 +144,14 @@ def peer_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate peer research sentiment"""
     logger.info(f"Starting peer research for {state.business}")
     try:
-        peer_sentiment = get_peer_sentiment(business=state.business)
+        peer_sentiment, agent_metrics = get_peer_sentiment(business=state.business)
         logger.info(f"Completed peer research for {state.business}")
-        return {"peer_sentiment": format_sentiment_output(peer_sentiment)}
+        metrics = state.metrics.model_copy(deep=True)
+        metrics.add_agent_metrics(agent_metrics)
+        return {
+            "peer_sentiment": format_sentiment_output(peer_sentiment),
+            "metrics": metrics,
+        }
     except Exception as e:
         logger.error(f"Peer research failed for {state.business}: {e}", exc_info=True)
         return {"peer_sentiment": "Analysis unavailable due to data retrieval error."}
@@ -135,11 +161,16 @@ def headline_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate headline research sentiment"""
     logger.info(f"Starting headline research for {state.business}")
     try:
-        headline_sentiment = get_headline_sentiment(
+        headline_sentiment, agent_metrics = get_headline_sentiment(
             business=state.business,
         )
         logger.info(f"Completed headline research for {state.business}")
-        return {"headline_sentiment": format_sentiment_output(headline_sentiment)}
+        metrics = state.metrics.model_copy(deep=True)
+        metrics.add_agent_metrics(agent_metrics)
+        return {
+            "headline_sentiment": format_sentiment_output(headline_sentiment),
+            "metrics": metrics,
+        }
     except Exception as e:
         logger.error(
             f"Headline research failed for {state.business}: {e}", exc_info=True
@@ -153,12 +184,20 @@ def filings_research_agent(state: EquityResearchState) -> dict:
     """LLM call to generate SEC filings research sentiment"""
     logger.info(f"Starting filings research for {state.ticker}")
     try:
-        filings_sentiment = get_filings_sentiment(ticker=state.ticker)
+        filings_sentiment, agent_metrics = get_filings_sentiment(ticker=state.ticker)
+        metrics = state.metrics.model_copy(deep=True)
+        metrics.add_agent_metrics(agent_metrics)
         if filings_sentiment:
             logger.info(f"Completed filings research for {state.ticker}")
-            return {"filings_sentiment": format_sentiment_output(filings_sentiment)}
+            return {
+                "filings_sentiment": format_sentiment_output(filings_sentiment),
+                "metrics": metrics,
+            }
         else:
-            return {"filings_sentiment": "No SEC filings available for analysis."}
+            return {
+                "filings_sentiment": "No SEC filings available for analysis.",
+                "metrics": metrics,
+            }
     except Exception as e:
         logger.error(f"Filings research failed for {state.ticker}: {e}", exc_info=True)
         return {
@@ -170,9 +209,15 @@ def sentiment_aggregator(state: EquityResearchState) -> dict:
     """LLM call to aggregate research findings and synthesize sentiment"""
     logger.info(f"Starting sentiment aggregation for {state.ticker}")
     try:
-        combined_sentiment = get_aggregated_sentiment(state)
+        combined_sentiment, agent_metrics = get_aggregated_sentiment(state)
         logger.info(f"Completed sentiment aggregation for {state.ticker}")
-        return {"combined_sentiment": combined_sentiment}
+        # Update metrics in state
+        metrics = state.metrics.model_copy(deep=True)
+        metrics.add_agent_metrics(agent_metrics)
+        return {
+            "combined_sentiment": combined_sentiment,
+            "metrics": metrics,
+        }
     except Exception as e:
         logger.error(
             f"Sentiment aggregation failed for {state.ticker}: {e}", exc_info=True
@@ -189,13 +234,17 @@ def sentiment_evaluator(state: EquityResearchState) -> dict:
     """LLM call to evaluate sentiment aggregator output"""
     logger.info("Starting sentiment evaluation")
     try:
-        sentiment_evaluation = evaluate_aggregated_sentement(
+        sentiment_evaluation, agent_metrics = evaluate_aggregated_sentement(
             sentiment=state.combined_sentiment
         )
         logger.info("Completed sentiment evaluation")
+        # Update metrics in state
+        metrics = state.metrics.model_copy(deep=True)
+        metrics.add_agent_metrics(agent_metrics)
         sentiment_evaluation["revision_iteration_count"] = (
             state.revision_iteration_count + 1
         )
+        sentiment_evaluation["metrics"] = metrics
         return sentiment_evaluation
     except Exception as e:
         logger.error(f"Sentiment evaluation failed: {e}", exc_info=True)
@@ -320,6 +369,8 @@ graph_workflow = graph_builder.compile(cache=cache)
 
 
 def input(input_dict: dict) -> EquityResearchState:
+    # Initialize metrics with request start time stored in state
+    metrics = RequestMetrics()
     state = EquityResearchState(
         ticker=input_dict["ticker"],
         trade_duration=input_dict["trade_duration"],
@@ -339,6 +390,7 @@ def input(input_dict: dict) -> EquityResearchState:
         is_ticker_valid=False,
         revision_iteration_count=0,
         ticker_info=None,  # Will be populated by ticker_validation node
+        metrics=metrics,
     )
     return state
 

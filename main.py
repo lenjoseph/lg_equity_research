@@ -1,5 +1,6 @@
 import os
 import re
+import time
 
 # Suppress gRPC/absl logging before importing anything that uses it
 os.environ["GRPC_VERBOSITY"] = "ERROR"
@@ -56,6 +57,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 @app.post("/research-equity")
 @limiter.limit("10/minute")
 async def research_equity(request: Request, req: EquityResearchRequest):
+    start_time = time.perf_counter()
     sanitized_ticker = sanitize_ticker(req.ticker)
 
     res = await research_chain.ainvoke(
@@ -65,6 +67,10 @@ async def research_equity(request: Request, req: EquityResearchRequest):
             "trade_direction": req.trade_direction,
         }
     )
+
+    total_latency_ms = (time.perf_counter() - start_time) * 1000
+    res.metrics.total_latency_ms = total_latency_ms
+
     return {
         "ticker": res.ticker,
         "sentiment_analysis": {
@@ -77,6 +83,7 @@ async def research_equity(request: Request, req: EquityResearchRequest):
             "filings": res.filings_sentiment,
         },
         "combined_sentiment": res.combined_sentiment,
+        "metrics": res.metrics.to_response_dict(),
     }
 
 
