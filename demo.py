@@ -90,7 +90,7 @@ if analyze_button:
                     "trade_direction": trade_direction,
                     "trade_duration": trade_duration,
                 },
-                timeout=120,
+                timeout=240,
             )
 
         # Countdown intervals in seconds
