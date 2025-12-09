@@ -8,7 +8,6 @@ from logger import get_logger
 
 logger = get_logger(__name__)
 
-# Section patterns for 10-K/10-Q
 SECTION_PATTERNS = {
     "10-K": {
         "business": r"item\s*1[.\s]+business",
@@ -29,11 +28,8 @@ SECTION_PATTERNS = {
 
 def clean_text(text: str) -> str:
     """Clean extracted text by removing excess whitespace."""
-    # Remove multiple newlines
     text = re.sub(r"\n{3,}", "\n\n", text)
-    # Remove multiple spaces
     text = re.sub(r" {2,}", " ", text)
-    # Strip leading/trailing whitespace from lines
     lines = [line.strip() for line in text.split("\n")]
     return "\n".join(lines).strip()
 
@@ -42,11 +38,9 @@ def extract_text_from_html(html: str) -> str:
     """Extract plain text from HTML content."""
     soup = BeautifulSoup(html, "html.parser")
 
-    # Remove script and style elements
     for element in soup(["script", "style", "meta", "link"]):
         element.decompose()
 
-    # Get text
     text = soup.get_text(separator="\n")
     return clean_text(text)
 
@@ -62,17 +56,14 @@ def find_section_boundaries(
     boundaries = {}
     section_starts = []
 
-    # Find all section starts
     for section_name, pattern in patterns.items():
         matches = list(re.finditer(pattern, text, re.IGNORECASE))
         if matches:
             start = matches[0].start()
             section_starts.append((start, section_name))
 
-    # Sort by position
     section_starts.sort(key=lambda x: x[0])
 
-    # Determine boundaries (each section ends where next begins)
     for i, (start, name) in enumerate(section_starts):
         if i + 1 < len(section_starts):
             end = section_starts[i + 1][0]
@@ -100,7 +91,6 @@ def parse_10k(raw_html: str) -> dict[str, str]:
         if len(section_text) > 100:  # Skip very short sections
             sections[section_name] = section_text
 
-    # If no sections found, return full text as fallback
     if not sections:
         logger.warning("Could not parse 10-K sections, using full text")
         sections["full_document"] = text
@@ -164,6 +154,5 @@ def parse_filing(raw_html: str, filing_type: str) -> dict[str, str]:
     if parser:
         return parser(raw_html)
 
-    # Fallback for unknown types
     logger.warning(f"Unknown filing type: {filing_type}, extracting full text")
     return {"full_document": extract_text_from_html(raw_html)}

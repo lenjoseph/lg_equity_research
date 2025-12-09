@@ -7,7 +7,6 @@ from models.agent import FilingChunk, FilingMetadata
 
 logger = get_logger(__name__)
 
-# Text splitter configuration
 splitter = RecursiveCharacterTextSplitter(
     separators=["\n\n", "\n", ". ", " "],
     chunk_size=1500,
@@ -34,11 +33,9 @@ def chunk_filing(
     chunk_index = 0
 
     for section_name, section_text in parsed_sections.items():
-        # Skip empty sections
         if not section_text or len(section_text.strip()) < 50:
             continue
 
-        # Split section into chunks
         text_chunks = splitter.split_text(section_text)
 
         for text in text_chunks:

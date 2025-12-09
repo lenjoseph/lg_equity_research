@@ -18,7 +18,6 @@ from models.agent import FilingMetadata
 
 logger = get_logger(__name__)
 
-# Directory for caching raw filings
 FILINGS_CACHE_DIR = Path("data/filings")
 
 
@@ -43,6 +42,19 @@ def _save_filing_to_cache(metadata: FilingMetadata, content: str) -> None:
     cache_path.write_text(content, encoding="utf-8")
 
 
+def _delete_cached_filing(metadata: FilingMetadata) -> None:
+    """Delete a cached filing after successful embedding."""
+    cache_path = _get_cache_path(metadata)
+    if cache_path.exists():
+        cache_path.unlink()
+        logger.debug(f"Deleted cached filing: {cache_path}")
+
+        ticker_dir = cache_path.parent
+        if ticker_dir.exists() and not any(ticker_dir.iterdir()):
+            ticker_dir.rmdir()
+            logger.debug(f"Removed empty directory: {ticker_dir}")
+
+
 def _get_ingested_accession_numbers(ticker: str) -> set[str]:
     """Get set of already-ingested accession numbers."""
     if not collection_exists(ticker):
@@ -50,7 +62,6 @@ def _get_ingested_accession_numbers(ticker: str) -> set[str]:
 
     collection = get_or_create_collection(ticker)
 
-    # Get all unique accession numbers from collection
     results = collection.get(include=["metadatas"])
     accession_numbers = set()
     for meta in results.get("metadatas", []):
@@ -65,6 +76,7 @@ def ingest_ticker_filings(
     filing_types: list[str] = ["10-K", "10-Q"],
     years: int = 2,
     force: bool = False,
+    keep_html: bool = False,
 ) -> dict:
     """
     Ingest SEC filings for a ticker into the vector store.
@@ -74,6 +86,7 @@ def ingest_ticker_filings(
         filing_types: Types of filings to ingest
         years: Number of years of filings to fetch
         force: If True, re-ingest all filings even if already present
+        keep_html: If True, retain HTML files after embedding (default: False to save disk space)
 
     Returns:
         Dict with ingestion statistics
@@ -84,18 +97,14 @@ def ingest_ticker_filings(
         f"Starting ingestion for {ticker} ({years} years, types: {filing_types})"
     )
 
-    # Calculate limit based on filing frequency
-    # 10-K: 1/year, 10-Q: 4/year, 8-K: variable
     limit = years * 5  # Conservative estimate
 
-    # Fetch filing list
     filings = fetch_filing_list(ticker, filing_types=filing_types, limit=limit)
 
     if not filings:
         logger.warning(f"No filings found for {ticker}")
         return stats
 
-    # Filter to filings within date range
     cutoff_date = datetime.now() - timedelta(days=years * 365)
     filings = [
         f
@@ -103,25 +112,20 @@ def ingest_ticker_filings(
         if datetime.strptime(f.filing_date, "%Y-%m-%d") >= cutoff_date
     ]
 
-    # Get already-ingested filings
     ingested = _get_ingested_accession_numbers(ticker) if not force else set()
 
-    # Get or create collection
     collection = get_or_create_collection(ticker)
 
     for filing in filings:
-        # Skip if already ingested
         if filing.accession_number in ingested:
             logger.debug(f"Skipping already-ingested filing: {filing.accession_number}")
             stats["skipped"] += 1
             continue
 
         try:
-            # Try to load from cache first
             raw_html = _load_cached_filing(filing)
 
             if raw_html is None:
-                # Download from SEC
                 raw_html = download_filing(filing)
                 if raw_html:
                     _save_filing_to_cache(filing, raw_html)
@@ -131,14 +135,11 @@ def ingest_ticker_filings(
                 stats["errors"] += 1
                 continue
 
-            # Parse filing into sections
             sections = parse_filing(raw_html, filing.filing_type)
 
-            # Chunk sections
             chunks = chunk_filing(sections, filing)
 
             if chunks:
-                # Embed and store chunks
                 embed_chunks(chunks, collection)
                 stats["chunks_created"] += len(chunks)
                 stats["ingested"] += 1
@@ -146,6 +147,8 @@ def ingest_ticker_filings(
                     f"Ingested {filing.filing_type} ({filing.filing_date}): "
                     f"{len(chunks)} chunks"
                 )
+                if not keep_html:
+                    _delete_cached_filing(filing)
             else:
                 logger.warning(
                     f"No chunks created from filing: {filing.accession_number}"

@@ -13,7 +13,7 @@ from models.agent import FilingMetadata
 
 logger = get_logger(__name__)
 
-# SEC requires identifying user agent
+
 USER_AGENT = os.getenv("SEC_EDGAR_USER_AGENT", "YourCompany your.email@example.com")
 
 # Rate limiting: SEC allows max 10 requests/second
@@ -37,7 +37,6 @@ def _get_ticker_cik_map() -> dict[str, str]:
         response.raise_for_status()
         data = response.json()
 
-        # Build mapping: ticker -> CIK (zero-padded to 10 digits)
         ticker_map = {}
         for entry in data.values():
             ticker = entry.get("ticker", "").upper()
@@ -106,7 +105,6 @@ class SECFetcher:
             return []
 
         try:
-            # Get company submissions using CIK
             submissions = self.client.get_submissions(cik=cik)
         except Exception as e:
             logger.error(f"Failed to fetch submissions for {ticker} (CIK: {cik}): {e}")
@@ -119,7 +117,6 @@ class SECFetcher:
             logger.warning(f"No filings found for {ticker}")
             return []
 
-        # Extract filing data
         forms = recent_filings.get("form", [])
         dates = recent_filings.get("filingDate", [])
         accession_numbers = recent_filings.get("accessionNumber", [])
