@@ -1,8 +1,8 @@
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Annotated, Any, Dict, Optional
 from pydantic import BaseModel, Field
 
-from models.metrics import RequestMetrics
+from models.metrics import RequestMetrics, merge_metrics
 
 
 class TradeDuration(Enum):
@@ -37,4 +37,6 @@ class EquityResearchState(BaseModel):
     is_ticker_valid: bool = False
     revision_iteration_count: int = 0
     ticker_info: Optional[Dict[str, Any]] = None  # Cached yfinance ticker.info
-    metrics: RequestMetrics = Field(default_factory=RequestMetrics)
+    metrics: Annotated[RequestMetrics, merge_metrics] = Field(
+        default_factory=RequestMetrics
+    )

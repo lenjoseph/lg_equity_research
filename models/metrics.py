@@ -47,6 +47,17 @@ class RequestMetrics(BaseModel):
             self.total_output_tokens += metrics.token_usage.output_tokens
             self.total_tokens += metrics.token_usage.total_tokens
 
+    def merge(self, other: "RequestMetrics") -> "RequestMetrics":
+        """Merge another RequestMetrics into this one (for parallel agent execution)."""
+        merged = RequestMetrics(
+            total_latency_ms=max(self.total_latency_ms, other.total_latency_ms),
+            agent_metrics={**self.agent_metrics, **other.agent_metrics},
+            total_input_tokens=self.total_input_tokens + other.total_input_tokens,
+            total_output_tokens=self.total_output_tokens + other.total_output_tokens,
+            total_tokens=self.total_tokens + other.total_tokens,
+        )
+        return merged
+
     def to_response_dict(self) -> dict:
         """Convert metrics to API response format."""
         return {
@@ -70,3 +81,12 @@ class RequestMetrics(BaseModel):
                 for name, m in self.agent_metrics.items()
             },
         }
+
+
+def merge_metrics(left: RequestMetrics, right: RequestMetrics) -> RequestMetrics:
+    """Reducer function for LangGraph to merge metrics from parallel nodes."""
+    if left is None:
+        return right
+    if right is None:
+        return left
+    return left.merge(right)
