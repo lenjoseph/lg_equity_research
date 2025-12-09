@@ -6,6 +6,24 @@ from concurrent.futures import ThreadPoolExecutor
 # Configuration
 API_URL = "http://localhost:8000"
 
+# Model pricing in dollars per 1M tokens (input, output)
+MODEL_PRICING = {
+    "gpt-4o-mini": (0.15, 0.60),
+    "gpt-4o": (2.50, 10.00),
+    "gpt-5.1": (2.50, 10.00),
+    "gemini-2.5-flash-lite": (0.075, 0.30),
+    "gemini-2.5-flash": (0.15, 0.60),
+}
+
+
+def calculate_cost_dollars(model: str, input_tokens: int, output_tokens: int) -> float:
+    """Calculate cost in dollars based on model and token usage."""
+    input_price, output_price = MODEL_PRICING.get(model, (0.15, 0.60))
+    input_cost = (input_tokens / 1_000_000) * input_price
+    output_cost = (output_tokens / 1_000_000) * output_price
+    return input_cost + output_cost
+
+
 st.set_page_config(
     page_title="Equity Research Agent",
     page_icon=None,
@@ -162,10 +180,21 @@ if st.session_state.results:
     if metrics:
         with st.expander("📊 Performance Metrics", expanded=False):
             # Summary metrics row
-            col1, col2, col3, col4 = st.columns(4)
+            col1, col2, col3, col4, col5 = st.columns(5)
 
             total_latency = metrics.get("total_latency_ms", 0)
             total_tokens = metrics.get("total_tokens", {})
+
+            # Calculate total cost across all agents
+            agent_metrics = metrics.get("agents", {})
+            total_cost = sum(
+                calculate_cost_dollars(
+                    agent_data.get("model", ""),
+                    agent_data.get("tokens", {}).get("input", 0),
+                    agent_data.get("tokens", {}).get("output", 0),
+                )
+                for agent_data in agent_metrics.values()
+            )
 
             with col1:
                 latency_display = (
@@ -184,12 +213,14 @@ if st.session_state.results:
             with col4:
                 st.metric("Output Tokens", f"{total_tokens.get('output', 0):,}")
 
+            with col5:
+                st.metric("Total Cost", f"${total_cost:.4f}")
+
             st.markdown("---")
 
             # Agent-level metrics table
             st.markdown("**Agent Breakdown**")
 
-            agent_metrics = metrics.get("agents", {})
             if agent_metrics:
                 # Build table data
                 table_data = []
@@ -199,6 +230,12 @@ if st.session_state.results:
                     model = agent_data.get("model", "N/A")
                     cached = agent_data.get("cached", False)
 
+                    input_tokens = tokens.get("input", 0)
+                    output_tokens = tokens.get("output", 0)
+                    cost_dollars = calculate_cost_dollars(
+                        model or "", input_tokens, output_tokens
+                    )
+
                     table_data.append(
                         {
                             "Agent": agent_name.replace("_", " ").title(),
@@ -207,9 +244,10 @@ if st.session_state.results:
                                 if latency >= 1000
                                 else f"{latency:.0f}ms"
                             ),
-                            "Input Tokens": tokens.get("input", 0),
-                            "Output Tokens": tokens.get("output", 0),
+                            "Input Tokens": input_tokens,
+                            "Output Tokens": output_tokens,
                             "Total Tokens": tokens.get("total", 0),
+                            "Cost ($)": cost_dollars,
                             "Model": model or "N/A",
                             "Cached": "✓" if cached else "—",
                         }
@@ -236,6 +274,9 @@ if st.session_state.results:
                         ),
                         "Total Tokens": st.column_config.NumberColumn(
                             "Total Tokens", format="%d"
+                        ),
+                        "Cost ($)": st.column_config.NumberColumn(
+                            "Cost ($)", format="$%.4f"
                         ),
                         "Model": st.column_config.TextColumn("Model", width="small"),
                         "Cached": st.column_config.TextColumn("Cached", width="small"),
