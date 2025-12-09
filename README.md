@@ -51,8 +51,8 @@ The app structures AI agents as research domain specialists that perform data ga
 The app manages state through langgraph's graph state model.
 The graph implements node-level caching with configurable TTLs and dynamic cache policies per agent.
 The entrypoint of the graph validates that the ticker is valid using yfinance.
-Once validated, SEC filings are ingested into a vector store.
-After filings ingestion, seven research agents execute in parallel: fundamental, technical, macro, industry, peer, headline, and filings.
+Once validated, the graph fans out to start SEC filings ingestion and parallel execution of most research agents (fundamental, technical, macro, industry, peer, headline).
+The filings research agent waits for SEC filings ingestion to complete before execution.
 When all agents have completed, an aggregator agent synthesizes overall sentiment for the stock.
 An evaluator agent reviews the aggregator's output for compliance. If non-compliant, it provides feedback and the aggregator revises (up to 3 iterations).
 
