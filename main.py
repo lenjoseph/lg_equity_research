@@ -1,16 +1,36 @@
 import os
+import re
 
 # Suppress gRPC/absl logging before importing anything that uses it
 os.environ["GRPC_VERBOSITY"] = "ERROR"
 os.environ["GLOG_minloglevel"] = "2"
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from graph import research_chain
 from models.api import EquityResearchRequest
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+
+TICKER_PATTERN = re.compile(r"^[A-Z0-9.\-]{1,10}$")
+
+
+def sanitize_ticker(ticker: str) -> str:
+    """Sanitize and validate stock ticker input."""
+    sanitized = ticker.strip().upper()
+
+    if not sanitized:
+        raise HTTPException(status_code=400, detail="Ticker cannot be empty")
+
+    if not TICKER_PATTERN.match(sanitized):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid ticker format. Ticker must contain only letters, numbers, dots, or hyphens (max 10 characters)",
+        )
+
+    return sanitized
+
 
 app = FastAPI()
 app.add_middleware(
@@ -36,9 +56,11 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 @app.post("/research-equity")
 @limiter.limit("10/minute")
 async def research_equity(request: Request, req: EquityResearchRequest):
+    sanitized_ticker = sanitize_ticker(req.ticker)
+
     res = await research_chain.ainvoke(
         {
-            "ticker": req.ticker,
+            "ticker": sanitized_ticker,
             "trade_duration": req.trade_duration,
             "trade_direction": req.trade_direction,
         }
