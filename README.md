@@ -67,6 +67,26 @@ An evaluator agent reviews the aggregator's output and determines whether it com
 - Economic Data API: Pandas Datareader
 - SEC Filings RAG: ChromaDB, SentenceTransformer
 
+# Agent Observability
+
+The application tracks detailed metrics for each agent execution and aggregates them at the request level. This enables cost monitoring, performance debugging, and cache effectiveness analysis.
+
+**Per-Agent Metrics:**
+
+- `latency_ms` - Execution time in milliseconds
+- `token_usage` - Input, output, and total tokens consumed
+- `model` - The LLM model used (e.g., gpt-4o-mini)
+- `cached` - Whether the result was served from cache
+
+**Request-Level Metrics:**
+
+- `total_latency_ms` - End-to-end request latency
+- `total_tokens` - Aggregate token usage across all agents
+
+Metrics are returned in the API response under the `metrics` key and displayed in the Streamlit demo's "Performance Metrics" panel. For parallel agent execution, metrics are merged using a LangGraph reducer to accurately aggregate totals.
+
+For deeper tracing and visualization, connect to LangSmith (see "Running in LangSmith for Observability" above).
+
 # API Definition
 
 The API exposes one POST enpoint at `/research-equity`
