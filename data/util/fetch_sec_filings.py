@@ -14,10 +14,10 @@ from models.agent import FilingMetadata
 logger = get_logger(__name__)
 
 
-USER_AGENT = os.getenv("SEC_EDGAR_USER_AGENT")
+USER_AGENT = os.getenv("SEC_EDGAR_AGENT_KEY")
 if not USER_AGENT:
     raise ValueError(
-        "SEC_EDGAR_USER_AGENT environment variable must be set (format: 'youremail@domain.extension')"
+        "SEC_EDGAR_AGENT_KEY environment variable must be set (format: 'youremail@domain.extension')"
     )
 
 # Rate limiting: SEC allows max 10 requests/second

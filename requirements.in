@@ -6,6 +6,7 @@ langchain_huggingface
 langchain_chroma
 langchain_text-splitters
 langgraph_cli[inmem]
+sentence_transformers
 langgraph
 chromadb
 pytest

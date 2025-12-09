@@ -88,7 +88,10 @@ executing==2.2.1
 fastapi==0.121.2
     # via -r requirements.in
 filelock==3.20.0
-    # via huggingface-hub
+    # via
+    #   huggingface-hub
+    #   torch
+    #   transformers
 filetype==1.2.0
     # via langchain-google-genai
 flatbuffers==25.9.23
@@ -98,7 +101,9 @@ forbiddenfruit==0.1.4
 frozendict==2.4.7
     # via yfinance
 fsspec==2025.12.0
-    # via huggingface-hub
+    # via
+    #   huggingface-hub
+    #   torch
 gitdb==4.0.12
     # via gitpython
 gitpython==3.1.45
@@ -153,7 +158,9 @@ httpx==0.28.1
 huggingface-hub==0.36.0
     # via
     #   langchain-huggingface
+    #   sentence-transformers
     #   tokenizers
+    #   transformers
 humanfriendly==10.0
     # via coloredlogs
 idna==3.11
@@ -177,8 +184,11 @@ jinja2==3.1.6
     # via
     #   altair
     #   pydeck
+    #   torch
 jiter==0.12.0
     # via openai
+joblib==1.5.2
+    # via scikit-learn
 jsonpatch==1.33
     # via langchain-core
 jsonpointer==3.0.0
@@ -271,6 +281,8 @@ multitasking==0.0.12
     # via yfinance
 narwhals==2.13.0
     # via altair
+networkx==3.6.1
+    # via torch
 numpy==1.26.4
     # via
     #   -r requirements.in
@@ -279,7 +291,10 @@ numpy==1.26.4
     #   onnxruntime
     #   pandas
     #   pydeck
+    #   scikit-learn
+    #   scipy
     #   streamlit
+    #   transformers
     #   yfinance
 oauthlib==3.3.1
     # via
@@ -339,6 +354,7 @@ packaging==25.0
     #   onnxruntime
     #   pytest
     #   streamlit
+    #   transformers
 pandas==2.3.3
     # via
     #   pandas-datareader
@@ -353,7 +369,9 @@ peewee==3.18.3
 pexpect==4.9.0
     # via ipython
 pillow==12.0.0
-    # via streamlit
+    # via
+    #   sentence-transformers
+    #   streamlit
 platformdirs==4.5.0
     # via yfinance
 playwright==1.56.0
@@ -449,13 +467,16 @@ pyyaml==6.0.3
     #   huggingface-hub
     #   kubernetes
     #   langchain-core
+    #   transformers
     #   uvicorn
 referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
 regex==2025.11.3
-    # via tiktoken
+    # via
+    #   tiktoken
+    #   transformers
 requests==2.32.5
     # via
     #   google-api-core
@@ -470,6 +491,7 @@ requests==2.32.5
     #   sec-edgar-api
     #   streamlit
     #   tiktoken
+    #   transformers
     #   yfinance
 requests-oauthlib==2.0.0
     # via kubernetes
@@ -485,7 +507,17 @@ rpds-py==0.30.0
     #   referencing
 rsa==4.9.1
     # via google-auth
+safetensors==0.7.0
+    # via transformers
+scikit-learn==1.7.2
+    # via sentence-transformers
+scipy==1.16.3
+    # via
+    #   scikit-learn
+    #   sentence-transformers
 sec-edgar-api==1.1.0
+    # via -r requirements.in
+sentence-transformers==5.1.2
     # via -r requirements.in
 shellingham==1.5.4
     # via typer
@@ -523,21 +555,28 @@ structlog==25.5.0
     #   langgraph-api
     #   langgraph-runtime-inmem
 sympy==1.14.0
-    # via onnxruntime
+    # via
+    #   onnxruntime
+    #   torch
 tenacity==9.1.2
     # via
     #   chromadb
     #   langchain-core
     #   langgraph-api
     #   streamlit
+threadpoolctl==3.6.0
+    # via scikit-learn
 tiktoken==0.12.0
     # via langchain-openai
 tokenizers==0.22.1
     # via
     #   chromadb
     #   langchain-huggingface
+    #   transformers
 toml==0.10.2
     # via streamlit
+torch==2.2.2
+    # via sentence-transformers
 tornado==6.5.2
     # via streamlit
 tqdm==4.67.1
@@ -545,10 +584,14 @@ tqdm==4.67.1
     #   chromadb
     #   huggingface-hub
     #   openai
+    #   sentence-transformers
+    #   transformers
 traitlets==5.14.3
     # via
     #   ipython
     #   matplotlib-inline
+transformers==4.57.3
+    # via sentence-transformers
 truststore==0.10.4
     # via langgraph-api
 typer==0.20.0
@@ -574,8 +617,10 @@ typing-extensions==4.15.0
     #   pydantic-core
     #   pyee
     #   referencing
+    #   sentence-transformers
     #   starlette
     #   streamlit
+    #   torch
     #   typer
     #   typing-inspection
 typing-inspection==0.4.2

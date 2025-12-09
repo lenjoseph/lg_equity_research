@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 def run_agent_with_tools(
     llm: Union[ChatOpenAI, ChatGoogleGenerativeAI],
     prompt: str,
-    tools: list = [],
+    tools: list = None,
     output_schema: Optional[Type[BaseModel]] = None,
 ):
     """
@@ -27,6 +27,8 @@ def run_agent_with_tools(
         The final LLM response (structured if output_schema provided, else content string)
     """
     try:
+        tools = tools or []
+
         tools_map = {tool.name: tool for tool in tools}
 
         llm_with_tools = llm.bind_tools(tools) if tools else llm
