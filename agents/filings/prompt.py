@@ -16,4 +16,7 @@ Output Requirements:
 - For each finding, provide a supporting citation with: the exact quote or paraphrase, filing_type (10-K, 10-Q, 8-K), section name, and filing_date
 - Provide a risk_factors_summary paragraph highlighting the most material risks to the investment thesis
 - Be specific and cite actual content from the filings
-- Distinguish between historical facts and forward-looking statements"""
+- Distinguish between historical facts and forward-looking statements
+
+Keep total output under 400 words
+"""
