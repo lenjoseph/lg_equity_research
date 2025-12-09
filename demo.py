@@ -28,80 +28,6 @@ st.markdown(
         padding: 1rem;
         border: 1px solid rgba(255,255,255,0.1);
     }
-    .metrics-container {
-        background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
-        border-radius: 12px;
-        padding: 1.5rem;
-        border: 1px solid rgba(139, 92, 246, 0.3);
-        margin: 1rem 0;
-    }
-    .metrics-header {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #a78bfa;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-    }
-    .metric-box {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 8px;
-        padding: 1rem;
-        text-align: center;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-    .metric-value {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #e0e7ff;
-    }
-    .metric-label {
-        font-size: 0.85rem;
-        color: #94a3b8;
-        margin-top: 0.25rem;
-    }
-    .agent-metrics-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 1rem;
-    }
-    .agent-metrics-table th {
-        background: rgba(139, 92, 246, 0.2);
-        padding: 0.75rem;
-        text-align: left;
-        font-weight: 600;
-        color: #c4b5fd;
-        border-bottom: 2px solid rgba(139, 92, 246, 0.3);
-    }
-    .agent-metrics-table td {
-        padding: 0.75rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        color: #e2e8f0;
-    }
-    .agent-metrics-table tr:hover {
-        background: rgba(255, 255, 255, 0.03);
-    }
-    .model-badge {
-        background: rgba(59, 130, 246, 0.2);
-        color: #93c5fd;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.75rem;
-        font-family: monospace;
-    }
-    .cached-badge {
-        background: rgba(34, 197, 94, 0.2);
-        color: #86efac;
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
-        font-size: 0.75rem;
-    }
 </style>
 """,
     unsafe_allow_html=True,
@@ -281,9 +207,9 @@ if st.session_state.results:
                                 if latency >= 1000
                                 else f"{latency:.0f}ms"
                             ),
-                            "Input": f"{tokens.get('input', 0):,}",
-                            "Output": f"{tokens.get('output', 0):,}",
-                            "Total": f"{tokens.get('total', 0):,}",
+                            "Input Tokens": tokens.get("input", 0),
+                            "Output Tokens": tokens.get("output", 0),
+                            "Total Tokens": tokens.get("total", 0),
                             "Model": model or "N/A",
                             "Cached": "✓" if cached else "—",
                         }
@@ -292,43 +218,29 @@ if st.session_state.results:
                 # Sort by agent name for consistent ordering
                 table_data.sort(key=lambda x: x["Agent"])
 
-                # Display as styled table using HTML
-                table_html = """
-                <table class="agent-metrics-table">
-                    <thead>
-                        <tr>
-                            <th>Agent</th>
-                            <th>Latency</th>
-                            <th>Input Tokens</th>
-                            <th>Output Tokens</th>
-                            <th>Total Tokens</th>
-                            <th>Model</th>
-                            <th>Cached</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                """
-
-                for row in table_data:
-                    cached_class = "cached-badge" if row["Cached"] == "✓" else ""
-                    table_html += f"""
-                        <tr>
-                            <td><strong>{row['Agent']}</strong></td>
-                            <td>{row['Latency']}</td>
-                            <td>{row['Input']}</td>
-                            <td>{row['Output']}</td>
-                            <td>{row['Total']}</td>
-                            <td><span class="model-badge">{row['Model']}</span></td>
-                            <td><span class="{cached_class}">{row['Cached']}</span></td>
-                        </tr>
-                    """
-
-                table_html += """
-                    </tbody>
-                </table>
-                """
-
-                st.markdown(table_html, unsafe_allow_html=True)
+                # Display using Streamlit's native dataframe
+                st.dataframe(
+                    table_data,
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "Agent": st.column_config.TextColumn("Agent", width="medium"),
+                        "Latency": st.column_config.TextColumn(
+                            "Latency", width="small"
+                        ),
+                        "Input Tokens": st.column_config.NumberColumn(
+                            "Input Tokens", format="%d"
+                        ),
+                        "Output Tokens": st.column_config.NumberColumn(
+                            "Output Tokens", format="%d"
+                        ),
+                        "Total Tokens": st.column_config.NumberColumn(
+                            "Total Tokens", format="%d"
+                        ),
+                        "Model": st.column_config.TextColumn("Model", width="small"),
+                        "Cached": st.column_config.TextColumn("Cached", width="small"),
+                    },
+                )
 
     st.divider()
 
