@@ -7,11 +7,11 @@ Agentic equity research implemented on LangGraph, ChromaDB, yfinance, and FastAP
 IMPORTANT: Currently the project is configured to use a lightweight embedding model (`all-MiniLM-L6-v2`). When building the docker image, this model will download once and get cached. If you choose to modify the embedding model to a larger
 option it will result in significant increases to image size and build time. To use a larger model it is recommended to host the model locally and map it to the built container using a volume mount.
 
-To create a local docker container to run the application, follow these steps:
+To create a local docker container to run the application, follow these steps (Approximate build time for current configuration: ~4.5 minutes):
 
 1. Hydrate env variables in a new .env file (variables are specified in the env.dev file, langsmith is unnecessary for docker)
 2. Ensure the local Docker daemon is running
-3. Run `docker compose up` from root of the project (note: built image is ~1GB)
+3. Run `docker compose up` from root of the project (note: built image is ~2.6GB)
 4. In a separate terminal, execute the following curl command:
    curl -X POST "http://localhost:8000/research-equity" -H "Content-Type: application/json" -d '{"ticker": "TICKER", "trade_duration": "position_trade", "trade_direction": "short"}'
 
