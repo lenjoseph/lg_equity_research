@@ -47,14 +47,18 @@ This app implements an agentic ai architecture to compile equity research on a s
 
 ![Architecture Diagram](/architecture.png)
 
-The app structures AI agents as research domain specialists that perform data gathering and analysis scoped to their respective domain. The filings agent implements a RAG architecture to analyze relevant SEC filings.
-The app manages state through langgraph's graph state model.
-The graph implements node-level caching with configurable TTLs and dynamic cache policies per agent.
-The entrypoint of the graph validates that the ticker is valid using yfinance.
-Once validated, the graph fans out to start SEC filings ingestion and parallel execution of most research agents (fundamental, technical, macro, industry, peer, headline).
-The filings research agent waits for SEC filings ingestion to complete before execution.
-When all agents have completed, an aggregator agent synthesizes overall sentiment for the stock.
-An evaluator agent reviews the aggregator's output for compliance. If non-compliant, it provides feedback and the aggregator revises (up to 3 iterations).
+The app structures AI agents as research domain specialists that perform data gathering and analysis scoped to their respective domain. Agents utilize different architectural patterns:
+
+- **Vector RAG**: For analyzing dense SEC filings (Filings Agent)
+- **Web RAG**: For real-time internet research (Headline, Industry, Peer Agents)
+- **Tool-Use**: For fetching structured API data (Fundamental, Technical, Macro Agents)
+  The app manages state through langgraph's graph state model.
+  The graph implements node-level caching with configurable TTLs and dynamic cache policies per agent.
+  The entrypoint of the graph validates that the ticker is valid using yfinance.
+  Once validated, the graph fans out to start SEC filings ingestion and parallel execution of most research agents (fundamental, technical, macro, industry, peer, headline).
+  The filings research agent waits for SEC filings ingestion to complete before execution.
+  When all agents have completed, an aggregator agent synthesizes overall sentiment for the stock.
+  An evaluator agent reviews the aggregator's output for compliance. If non-compliant, it provides feedback and the aggregator revises (up to 3 iterations).
 
 # Architecture Components
 
@@ -99,13 +103,35 @@ This endpoint requires three params:
 - trade_direction: The trade bias ("long" or "short")
 - trade_duration: The intended duration for the trade ("day_trade", "swing_trade", or "position_trade")
 
-# AI Agent Descriptions
+# Agent Details
 
-1. Technical Researcher - Focuses on technical price data over fixed timeframes
-2. Fundamentals Researcher - Focuses on business fundamentals via most recent earnings results
-3. Filings Researcher - Analyzes SEC filings (10-K, 10-Q) using RAG over embedded filing excerpts
-4. Macro Economic Researcher - Focuses on the macro economic components provided by federal reserve data
-5. Industry Researcher - Focuses on forecasted headwinds / tailwinds relative to the industry of the stock
-6. Headline Researcher - Focuses on recent (within the last month) headlines about the stock
-7. Sentiment Aggregator - Compiles overall stock sentiment based on aggregate findings of research specialist agents
-8. Sentiment Evaluator - Evaluates the aggregated sentiment for compliance with target criteria
+This system employs a multi-agent architecture where specialized agents use different methods to gather and analyze data.
+
+### 1. Vector RAG Agent (Retrieval-Augmented Generation)
+
+Uses a local ChromaDB vector store to index and semantically search dense documents.
+
+- **Filings Agent**: Ingests SEC filings (10-K, 10-Q) into a vector database. It embeds user queries to retrieve relevant text chunks for analysis.
+
+### 2. Web RAG Agents (Search Grounding)
+
+Leverages Google Gemini's search grounding capability to perform real-time web research.
+
+- **Headline Agent**: Searches for recent news and headlines (last 30 days) to gauge market sentiment.
+- **Industry Agent**: Researches industry-specific trends, headwinds, and tailwinds.
+- **Peer Agent**: Analyzes competitor performance and market positioning.
+
+### 3. Tool-Use Agents
+
+Uses Python tools to fetch structured data from external APIs (yfinance, FRED) before analysis.
+
+- **Fundamentals Agent**: Calls `yfinance` to retrieve balance sheets, income statements, and cash flow data.
+- **Technical Agent**: Fetches `yfinance` price history to calculate indicators like RSI, MACD, and Bollinger Bands.
+- **Macro Agent**: Connects to the FRED (Federal Reserve Economic Data) API to fetch GDP, inflation, and consumer sentiment data.
+
+### 4. Core Workflow Agents
+
+Synthesizes information and manages the research process.
+
+- **Sentiment Aggregator**: Combines outputs from all specialist agents into a cohesive research report.
+- **Sentiment Evaluator**: Reviews the aggregated report for quality and compliance, triggering revisions if necessary.
