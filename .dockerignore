@@ -74,3 +74,6 @@ Dockerfile*
 docker-compose*.yml
 .dockerignore
 
+# Data (exclude local data from build context)
+data/filings/
+data/chroma/
