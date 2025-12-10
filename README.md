@@ -4,6 +4,9 @@ Agentic equity research implemented on LangGraph, ChromaDB, yfinance, and FastAP
 
 # Running in Docker
 
+IMPORTANT: Currently the project is configured to use a lightweight embedding model (`all-MiniLM-L6-v2`). When building the docker image, this model will download once and get cached. If you choose to modify the embedding model to a larger
+option it will result in significant increases to image size and build time. To use a larger model it is recommended to host the model locally and map it to the built container using a volume mount.
+
 To create a local docker container to run the application, follow these steps:
 
 1. Hydrate env variables in a new .env file (variables are specified in the env.dev file, langsmith is unnecessary for docker)
@@ -19,8 +22,9 @@ To run the program from the terminal, follow these steps:
 1. Initialize a python environment on python version 3.12
 2. Install deps with pip or other python package manager
 3. Hydrate env variables in a new .env file (variables are specified in the env.dev file, langsmith is unnecessary for terminal use)
-4. Run `python main.py` from the root of the project
-5. From a separate terminal window, execute the following curl command:
+4. Run `python scripts/warmup_embeddings.py` to download and cache the embedding model for the RAG agent locally. You only need to do this once, unless you choose to use a different embedding model.
+5. Run `python main.py` from the root of the project
+6. From a separate terminal window, execute the following curl command:
    curl -X POST "http://localhost:8000/research-equity" -H "Content-Type: application/json" -d '{"ticker": "TICKER", "trade_duration": "position_trade", "trade_direction": "short"}'
 
 # Running in LangSmith for Observability
@@ -30,8 +34,9 @@ To run the program in Langsmith, which offers observability for graph execution 
 1. Initialize a python environment on python version 3.12
 2. Install deps with pip or other python package manager
 3. Hydrate env variables in a new .env file (variables are specified in the env.dev file, in this case langsmith is needed)
-4. Run `langsmith dev` from the root of the project
-5. A browser window should open showing the built graph and execution controls
+4. Run `python scripts/warmup_embeddings.py` to download and cache the embedding model for the RAG agent locally. You only need to do this once, unless you choose to use a different embedding model.
+5. Run `langsmith dev` from the root of the project
+6. A browser window should open showing the built graph and execution controls
 
 # Running the Streamlit Demo
 
