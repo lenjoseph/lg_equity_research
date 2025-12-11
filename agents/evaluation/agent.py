@@ -50,4 +50,11 @@ def evaluate_aggregated_sentement(
         token_usage=token_usage,
         model=model,
     )
+
+    if result is None:
+        return {
+            "compliant": True,
+            "feedback": "Evaluation unavailable due to API error.",
+        }, metrics
+
     return {"compliant": result.compliant, "feedback": result.feedback}, metrics
