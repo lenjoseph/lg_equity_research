@@ -6,12 +6,10 @@ from fastapi import HTTPException
 
 
 from agents.evaluation.agent import evaluate_aggregated_sentement
-from agents.filings.agent import get_filings_sentiment
 from agents.headline.agent import get_headline_sentiment
 from agents.industry.agent import get_industry_sentiment
 from agents.peer.agent import get_peer_sentiment
 from agents.aggregation.agent import get_aggregated_sentiment
-from data.util.ingest_sec_filings import ensure_filings_ingested
 
 from models.metrics import RequestMetrics
 from models.state import EquityResearchState
@@ -30,6 +28,8 @@ from util.cache import (
 from util.formating import format_sentiment_output
 from util.logger import get_logger
 
+from subgraphs.filings_rag_subgraph import filings_rag_subgraph
+
 load_dotenv()
 logger = get_logger(__name__)
 
@@ -43,28 +43,11 @@ def ticker_validation(state: EquityResearchState) -> dict:
     return result
 
 
-def filings_ingestion(state: EquityResearchState) -> dict:
-    """Ingest SEC filings into vector store before research agents run"""
-    logger.info(f"Starting SEC filings ingestion for {state.ticker}")
-    try:
-        was_ingested = ensure_filings_ingested(ticker=state.ticker)
-        if was_ingested:
-            logger.info(f"SEC filings ingested for {state.ticker}")
-        else:
-            logger.info(f"SEC filings already available for {state.ticker}")
-        return {"filings_ingested": True}
-    except Exception as e:
-        logger.error(
-            f"SEC filings ingestion failed for {state.ticker}: {e}", exc_info=True
-        )
-        return {"filings_ingested": False}
-
-
 def ticker_router(state: EquityResearchState):
-    """Route to filings ingestion and research agents if ticker is valid, otherwise end"""
+    """Route to filings workflow and research agents if ticker is valid, otherwise end"""
     if state.is_ticker_valid:
         return [
-            "filings_ingestion",
+            "filings_workflow",
             "fundamental_research_agent",
             "technical_research_agent",
             "macro_research_agent",
@@ -201,31 +184,6 @@ def headline_research_agent(state: EquityResearchState) -> dict:
         }
 
 
-def filings_research_agent(state: EquityResearchState) -> dict:
-    """LLM call to generate SEC filings research sentiment"""
-    logger.info(f"Starting filings research for {state.ticker}")
-    try:
-        filings_sentiment, agent_metrics = get_filings_sentiment(ticker=state.ticker)
-        metrics = RequestMetrics()
-        metrics.add_agent_metrics(agent_metrics)
-        if filings_sentiment:
-            logger.info(f"Completed filings research for {state.ticker}")
-            return {
-                "filings_sentiment": format_sentiment_output(filings_sentiment),
-                "metrics": metrics,
-            }
-        else:
-            return {
-                "filings_sentiment": "No SEC filings available for analysis.",
-                "metrics": metrics,
-            }
-    except Exception as e:
-        logger.error(f"Filings research failed for {state.ticker}: {e}", exc_info=True)
-        return {
-            "filings_sentiment": "Analysis unavailable due to data retrieval error."
-        }
-
-
 def sentiment_aggregator(state: EquityResearchState) -> dict:
     """LLM call to aggregate research findings and synthesize sentiment"""
     iteration = state.revision_iteration_count + 1
@@ -290,12 +248,24 @@ def sentiment_router(state: EquityResearchState):
         return "Noncompliant"
 
 
-# build workflow
+def run_filings_subgraph(state: EquityResearchState) -> dict:
+    """Wrapper to run the filings subgraph and filter output to avoid state conflicts"""
+    result = filings_rag_subgraph.invoke(state)
+    return {
+        "filings_sentiment": result.get("filings_sentiment"),
+        "filings_ingested": result.get("filings_ingested"),
+        "metrics": result.get("metrics"),
+    }
+
+
+# build main workflow
 graph_builder = StateGraph(EquityResearchState)
 
 # add agent nodes
 graph_builder.add_node("ticker_validation", ticker_validation)
-graph_builder.add_node("filings_ingestion", filings_ingestion)
+
+# Add the compiled subgraph as a node
+graph_builder.add_node("filings_workflow", run_filings_subgraph)
 
 graph_builder.add_node(
     "fundamental_research_agent",
@@ -340,13 +310,6 @@ graph_builder.add_node(
 )
 
 graph_builder.add_node(
-    "filings_research_agent",
-    filings_research_agent,
-    # evict filings research cache after one day
-    cache_policy=create_cache_policy(ttl=86400),
-)
-
-graph_builder.add_node(
     "aggregator",
     sentiment_aggregator,
 )
@@ -359,7 +322,7 @@ graph_builder.add_conditional_edges(
     "ticker_validation",
     ticker_router,
     [
-        "filings_ingestion",
+        "filings_workflow",
         "fundamental_research_agent",
         "technical_research_agent",
         "macro_research_agent",
@@ -369,8 +332,7 @@ graph_builder.add_conditional_edges(
         END,
     ],
 )
-# ingest SEC filings before filings research agent runs
-graph_builder.add_edge("filings_ingestion", "filings_research_agent")
+
 # synthesize sentiment
 graph_builder.add_edge("fundamental_research_agent", "aggregator")
 graph_builder.add_edge("technical_research_agent", "aggregator")
@@ -378,7 +340,7 @@ graph_builder.add_edge("macro_research_agent", "aggregator")
 graph_builder.add_edge("industry_research_agent", "aggregator")
 graph_builder.add_edge("peer_research_agent", "aggregator")
 graph_builder.add_edge("headline_research_agent", "aggregator")
-graph_builder.add_edge("filings_research_agent", "aggregator")
+graph_builder.add_edge("filings_workflow", "aggregator")
 graph_builder.add_edge("aggregator", "evaluator")
 # evaluation-optimization feedback loop with configured iteraation count
 graph_builder.add_conditional_edges(
