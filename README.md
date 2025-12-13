@@ -2,6 +2,8 @@
 
 Agentic equity research implemented on LangGraph, ChromaDB, yfinance, and FastAPI
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/lenjoseph/langgraph_equity_research)
+
 # Running in Docker
 
 IMPORTANT: Currently the project is configured to use a lightweight embedding model (`all-MiniLM-L6-v2`). When building the docker image, this model will download once and get cached. If you choose to modify the embedding model to a larger
