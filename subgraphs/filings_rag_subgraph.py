@@ -1,6 +1,7 @@
 from langgraph.graph import END, StateGraph, START
-from agents.filings.retriever import get_filings_context
-from agents.filings.synthesis import generate_filings_sentiment
+from agents.filings.agents.query_builder import generate_search_queries
+from agents.filings.agents.retriever import get_filings_context
+from agents.filings.agents.synthesis import generate_filings_sentiment
 from data.util.ingest_sec_filings import ensure_filings_ingested
 from models.state import EquityResearchState
 from models.metrics import RequestMetrics
@@ -28,11 +29,38 @@ def filings_rag_ingestion(state: EquityResearchState) -> dict:
         return {"filings_ingested": False}
 
 
+def filings_rag_query_builder(state: EquityResearchState) -> dict:
+    """Generate contextual search queries based on trade context"""
+    logger.info(
+        f"Building search queries for {state.ticker} "
+        f"({state.trade_direction.value}, {state.trade_duration.value})"
+    )
+    try:
+        search_queries, agent_metrics = generate_search_queries(
+            ticker=state.ticker,
+            trade_direction=state.trade_direction,
+            trade_duration=state.trade_duration,
+        )
+        metrics = RequestMetrics()
+        metrics.add_agent_metrics(agent_metrics)
+        logger.info(f"Generated search queries for {state.ticker}: {search_queries}")
+        return {
+            "filings_search_queries": search_queries,
+            "metrics": metrics,
+        }
+    except Exception as e:
+        logger.error(f"Query building failed for {state.ticker}: {e}", exc_info=True)
+        return {"filings_search_queries": None}
+
+
 def filings_rag_retriever(state: EquityResearchState) -> dict:
-    """Retrieve SEC filings context"""
+    """Retrieve SEC filings context using dynamically generated queries"""
     logger.info(f"Starting filings retrieval for {state.ticker}")
     try:
-        filings_context, agent_metrics = get_filings_context(ticker=state.ticker)
+        filings_context, agent_metrics = get_filings_context(
+            ticker=state.ticker,
+            search_queries=state.filings_search_queries,
+        )
         metrics = RequestMetrics()
         metrics.add_agent_metrics(agent_metrics)
         logger.info(f"Completed filings retrieval for {state.ticker}")
@@ -84,7 +112,13 @@ def filings_rag_synthesis_agent(state: EquityResearchState) -> dict:
 filings_rag_builder = StateGraph(EquityResearchState)
 filings_rag_builder.add_node("filings_ingestion", filings_rag_ingestion)
 
-# Add separate retrieval and synthesis nodes
+# Add query builder node to generate contextual search queries
+filings_rag_builder.add_node(
+    "filings_query_builder",
+    filings_rag_query_builder,
+    cache_policy=create_cache_policy(ttl=86400),
+)
+
 filings_rag_builder.add_node(
     "filings_retriever",
     filings_rag_retriever,
@@ -98,7 +132,8 @@ filings_rag_builder.add_node(
 )
 
 filings_rag_builder.add_edge(START, "filings_ingestion")
-filings_rag_builder.add_edge("filings_ingestion", "filings_retriever")
+filings_rag_builder.add_edge("filings_ingestion", "filings_query_builder")
+filings_rag_builder.add_edge("filings_query_builder", "filings_retriever")
 filings_rag_builder.add_edge("filings_retriever", "filings_synthesis_agent")
 filings_rag_builder.add_edge("filings_synthesis_agent", END)
 
