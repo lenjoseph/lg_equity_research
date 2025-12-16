@@ -1,6 +1,8 @@
 import os
 import re
 import time
+import threading
+from contextlib import asynccontextmanager
 
 # Suppress gRPC/absl logging before importing anything that uses it
 # Ensure huggingface tokenizer thread pool doesn't fork when graph executes parallel agents
@@ -15,6 +17,11 @@ from models.api import EquityResearchRequest
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+
+from data.util.ingest_sec_filings import ingest_ticker_filings
+from util.logger import get_logger
+
+logger = get_logger(__name__)
 
 TICKER_PATTERN = re.compile(r"^[A-Z0-9.\-]{1,10}$")
 
@@ -35,7 +42,35 @@ def sanitize_ticker(ticker: str) -> str:
     return sanitized
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    tickers_env = os.environ.get("PRELOAD_TICKERS")
+    if tickers_env:
+        tickers = tickers_env.replace(",", " ").split()
+        if tickers:
+            logger.info(
+                f"Found PRELOAD_TICKERS env var. Preloading filings for: {tickers}"
+            )
+
+            def ingest_all():
+                for ticker in tickers:
+                    try:
+                        logger.info(f"Starting background ingestion for {ticker}")
+                        ingest_ticker_filings(ticker=ticker, years=2)
+                        logger.info(f"Completed background ingestion for {ticker}")
+                    except Exception as e:
+                        logger.error(f"Error ingesting {ticker}: {e}", exc_info=True)
+
+            thread = threading.Thread(target=ingest_all)
+            thread.daemon = True  # Daemon thread ensures it doesn't block shutdown
+            thread.start()
+
+    yield
+    # Shutdown logic (if any)
+
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

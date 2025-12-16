@@ -29,6 +29,18 @@ To run the program from the terminal, follow these steps:
 6. From a separate terminal window, execute the following curl command:
    curl -X POST "http://localhost:8000/research-equity" -H "Content-Type: application/json" -d '{"ticker": "PLTR", "trade_duration": "position_trade", "trade_direction": "short"}'
 
+### Preloading Filings
+
+You can configure the application to automatically ingest SEC filings for specific tickers at startup. This is useful for pre-warming the cache for frequently accessed tickers.
+
+To do this, set the `PRELOAD_TICKERS` environment variable:
+
+# In your .env file
+
+PRELOAD_TICKERS=AAPL MSFT GOOGL
+
+The application will launch a background thread to ingest filings for these tickers immediately after startup.
+
 # Running in LangSmith for Observability
 
 To run the program in Langsmith, which offers observability for graph execution and tracing, follow these steps:
