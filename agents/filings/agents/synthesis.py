@@ -6,6 +6,7 @@ from typing import Optional, Tuple
 from agents.filings.prompts.synthesis_prompt import filings_synthesis_prompt
 from agents.shared.llm_models import LLM_MODELS, get_openai_llm
 from agents.shared.agent_utils import invoke_llm_with_metrics
+from agents.shared.token_config import DEFAULT_TOKEN_CONFIG, AgentTokenConfig
 from util.logger import get_logger
 from models.agent import FilingsSentimentOutput
 from models.metrics import AgentMetrics, TokenUsage
@@ -18,6 +19,7 @@ AGENT_NAME = "filings_synthesis"
 def generate_filings_sentiment(
     ticker: str,
     context: str,
+    token_config: Optional[AgentTokenConfig] = None,
 ) -> Tuple[Optional[FilingsSentimentOutput], AgentMetrics]:
     """
     Generate sentiment analysis from SEC filings context.
@@ -25,13 +27,16 @@ def generate_filings_sentiment(
     Args:
         ticker: Stock ticker symbol
         context: Retrieved context from SEC filings
+        token_config: Optional token configuration for this agent
 
     Returns:
         Tuple of (FilingsSentimentOutput or None, AgentMetrics)
     """
     start_time = time.perf_counter()
+    config = token_config or DEFAULT_TOKEN_CONFIG.filings_synthesis
     model = LLM_MODELS["open_ai_smart"]
     token_usage = TokenUsage()
+    budget_exceeded = False
 
     if not context:
         logger.warning(f"No context provided for filings synthesis for {ticker}")
@@ -47,18 +52,28 @@ def generate_filings_sentiment(
     prompt = f"{filings_synthesis_prompt}\n\n{context}"
 
     # Get LLM and generate structured output
-    llm = get_openai_llm(model=model, temperature=0.1)
+    llm = get_openai_llm(
+        model=model,
+        temperature=0.1,
+        max_tokens=config.max_output_tokens,
+    )
 
     try:
         result, token_usage = invoke_llm_with_metrics(
-            llm, prompt, FilingsSentimentOutput
+            llm, prompt, FilingsSentimentOutput, token_budget=config.token_budget
         )
+
+        # Check if budget was exceeded
+        if config.token_budget and token_usage.total_tokens > config.token_budget:
+            budget_exceeded = True
+
         latency_ms = (time.perf_counter() - start_time) * 1000
         metrics = AgentMetrics(
             agent_name=AGENT_NAME,
             latency_ms=latency_ms,
             token_usage=token_usage,
             model=model,
+            budget_exceeded=budget_exceeded,
         )
         return result, metrics
     except Exception as e:
@@ -69,5 +84,6 @@ def generate_filings_sentiment(
             latency_ms=latency_ms,
             token_usage=token_usage,
             model=model,
+            budget_exceeded=budget_exceeded,
         )
         return None, metrics

@@ -4,12 +4,13 @@ Generates contextual search queries based on ticker, trade direction, and trade 
 """
 
 import time
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from agents.filings.prompts.query_builder_prompt import query_builder_prompt
 from agents.filings.util import _get_trade_direction_desc, _get_trade_duration_desc
 from agents.shared.llm_models import LLM_MODELS, get_openai_llm
 from agents.shared.agent_utils import invoke_llm_with_metrics
+from agents.shared.token_config import DEFAULT_TOKEN_CONFIG, AgentTokenConfig
 from util.logger import get_logger
 from models.agent import QueryBuilderOutput
 from models.metrics import AgentMetrics, TokenUsage
@@ -25,6 +26,7 @@ def generate_search_queries(
     ticker: str,
     trade_direction: TradeDirection,
     trade_duration: TradeDuration,
+    token_config: Optional[AgentTokenConfig] = None,
 ) -> Tuple[List[str], AgentMetrics]:
     """
     Generate contextual search queries for SEC filings retrieval.
@@ -33,13 +35,16 @@ def generate_search_queries(
         ticker: Stock ticker symbol
         trade_direction: Direction of the trade (long/short)
         trade_duration: Duration of the trade (day/swing/position)
+        token_config: Optional token configuration for this agent
 
     Returns:
         Tuple of (list of search queries, AgentMetrics)
     """
     start_time = time.perf_counter()
+    config = token_config or DEFAULT_TOKEN_CONFIG.filings_query_builder
     model = LLM_MODELS["open_ai_fast"]
     token_usage = TokenUsage()
+    budget_exceeded = False
 
     prompt = query_builder_prompt.format(
         ticker=ticker,
@@ -49,16 +54,28 @@ def generate_search_queries(
         trade_duration_desc=_get_trade_duration_desc(trade_duration),
     )
 
-    llm = get_openai_llm(model=model, temperature=0.3)
+    llm = get_openai_llm(
+        model=model,
+        temperature=0.3,
+        max_tokens=config.max_output_tokens,
+    )
 
     try:
-        result, token_usage = invoke_llm_with_metrics(llm, prompt, QueryBuilderOutput)
+        result, token_usage = invoke_llm_with_metrics(
+            llm, prompt, QueryBuilderOutput, token_budget=config.token_budget
+        )
+
+        # Check if budget was exceeded
+        if config.token_budget and token_usage.total_tokens > config.token_budget:
+            budget_exceeded = True
+
         latency_ms = (time.perf_counter() - start_time) * 1000
         metrics = AgentMetrics(
             agent_name=AGENT_NAME,
             latency_ms=latency_ms,
             token_usage=token_usage,
             model=model,
+            budget_exceeded=budget_exceeded,
         )
 
         if result and result.search_queries:
@@ -78,6 +95,7 @@ def generate_search_queries(
             latency_ms=latency_ms,
             token_usage=token_usage,
             model=model,
+            budget_exceeded=budget_exceeded,
         )
         return _get_default_queries(trade_direction), metrics
 

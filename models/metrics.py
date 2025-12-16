@@ -20,6 +20,7 @@ class AgentMetrics(BaseModel):
     token_usage: TokenUsage = Field(default_factory=TokenUsage)
     model: Optional[str] = None
     cached: bool = False  # Whether result was served from cache
+    budget_exceeded: bool = False  # Whether token budget was exceeded
 
 
 class RequestMetrics(BaseModel):
@@ -38,6 +39,13 @@ class RequestMetrics(BaseModel):
         default=0, description="Total output tokens across all agents"
     )
     total_tokens: int = Field(default=0, description="Total tokens across all agents")
+    token_budget: Optional[int] = Field(
+        default=None,
+        description="Maximum tokens allowed for entire request (None = unlimited)",
+    )
+    budget_exceeded: bool = Field(
+        default=False, description="Whether the token budget was exceeded"
+    )
 
     def add_agent_metrics(self, metrics: AgentMetrics) -> None:
         """Add agent metrics and update totals."""
@@ -47,20 +55,59 @@ class RequestMetrics(BaseModel):
             self.total_output_tokens += metrics.token_usage.output_tokens
             self.total_tokens += metrics.token_usage.total_tokens
 
+        # Track if any agent exceeded budget
+        if metrics.budget_exceeded:
+            self.budget_exceeded = True
+
+        # Check if total exceeds budget
+        if self.token_budget is not None and self.total_tokens > self.token_budget:
+            self.budget_exceeded = True
+
+    def is_within_budget(self) -> bool:
+        """Check if current usage is within budget."""
+        if self.token_budget is None:
+            return True
+        return self.total_tokens <= self.token_budget
+
+    def remaining_budget(self) -> Optional[int]:
+        """Get remaining token budget (None if unlimited)."""
+        if self.token_budget is None:
+            return None
+        return max(0, self.token_budget - self.total_tokens)
+
     def merge(self, other: "RequestMetrics") -> "RequestMetrics":
         """Merge another RequestMetrics into this one (for parallel agent execution)."""
+        # Use the stricter budget (non-None takes precedence, then minimum)
+        merged_budget = None
+        if self.token_budget is not None and other.token_budget is not None:
+            merged_budget = min(self.token_budget, other.token_budget)
+        elif self.token_budget is not None:
+            merged_budget = self.token_budget
+        elif other.token_budget is not None:
+            merged_budget = other.token_budget
+
         merged = RequestMetrics(
             total_latency_ms=max(self.total_latency_ms, other.total_latency_ms),
             agent_metrics={**self.agent_metrics, **other.agent_metrics},
             total_input_tokens=self.total_input_tokens + other.total_input_tokens,
             total_output_tokens=self.total_output_tokens + other.total_output_tokens,
             total_tokens=self.total_tokens + other.total_tokens,
+            token_budget=merged_budget,
+            budget_exceeded=self.budget_exceeded or other.budget_exceeded,
         )
+
+        # Re-check if merged total exceeds budget
+        if (
+            merged.token_budget is not None
+            and merged.total_tokens > merged.token_budget
+        ):
+            merged.budget_exceeded = True
+
         return merged
 
     def to_response_dict(self) -> dict:
         """Convert metrics to API response format."""
-        return {
+        response = {
             "total_latency_ms": round(self.total_latency_ms, 2),
             "total_tokens": {
                 "input": self.total_input_tokens,
@@ -77,10 +124,22 @@ class RequestMetrics(BaseModel):
                     },
                     "model": m.model,
                     "cached": m.cached,
+                    "budget_exceeded": m.budget_exceeded,
                 }
                 for name, m in self.agent_metrics.items()
             },
         }
+
+        # Include budget information if set
+        if self.token_budget is not None:
+            response["token_budget"] = {
+                "limit": self.token_budget,
+                "used": self.total_tokens,
+                "remaining": self.remaining_budget(),
+                "exceeded": self.budget_exceeded,
+            }
+
+        return response
 
 
 def merge_metrics(left: RequestMetrics, right: RequestMetrics) -> RequestMetrics:

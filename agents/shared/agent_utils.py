@@ -9,6 +9,45 @@ from models.metrics import TokenUsage
 logger = get_logger(__name__)
 
 
+class TokenBudgetExceeded(Exception):
+    """Raised when a token budget has been exceeded."""
+
+    def __init__(self, budget: int, used: int, message: str = None):
+        self.budget = budget
+        self.used = used
+        self.message = message or f"Token budget exceeded: {used}/{budget} tokens used"
+        super().__init__(self.message)
+
+
+def check_token_budget(
+    used_tokens: int,
+    budget: Optional[int],
+    raise_on_exceed: bool = False,
+) -> bool:
+    """
+    Check if token usage is within budget.
+
+    Args:
+        used_tokens: Number of tokens already used
+        budget: Maximum allowed tokens (None = unlimited)
+        raise_on_exceed: If True, raise TokenBudgetExceeded instead of returning False
+
+    Returns:
+        True if within budget, False if exceeded
+
+    Raises:
+        TokenBudgetExceeded: If raise_on_exceed=True and budget is exceeded
+    """
+    if budget is None:
+        return True
+
+    if used_tokens >= budget:
+        if raise_on_exceed:
+            raise TokenBudgetExceeded(budget=budget, used=used_tokens)
+        return False
+    return True
+
+
 def _extract_token_usage(response) -> TokenUsage:
     """Extract token usage from LangChain response."""
     if hasattr(response, "usage_metadata") and response.usage_metadata:
@@ -44,6 +83,7 @@ def run_agent_with_tools(
     tools: list = None,
     output_schema: Optional[Type[BaseModel]] = None,
     track_tokens: bool = False,
+    token_budget: Optional[int] = None,
 ) -> Union[any, Tuple[any, TokenUsage]]:
     """
     Generic agent executor that handles tool calling flow.
@@ -54,10 +94,15 @@ def run_agent_with_tools(
         tools: List of tools to bind to the LLM
         output_schema: Optional Pydantic model for structured output
         track_tokens: If True, return tuple of (result, TokenUsage)
+        token_budget: Optional maximum total tokens allowed for this agent execution.
+                      If exceeded, stops further LLM calls and returns partial result.
 
     Returns:
         The final LLM response (structured if output_schema provided, else content string).
         If track_tokens=True, returns (result, TokenUsage).
+
+    Raises:
+        TokenBudgetExceeded: If token_budget is exceeded and no partial result available
     """
     total_usage = TokenUsage()
 
@@ -73,6 +118,16 @@ def run_agent_with_tools(
         total_usage = _aggregate_token_usage(
             total_usage, _extract_token_usage(response)
         )
+
+        # Check token budget after initial call
+        if not check_token_budget(total_usage.total_tokens, token_budget):
+            logger.warning(
+                f"Token budget exceeded after initial call: {total_usage.total_tokens}/{token_budget}"
+            )
+            # Return what we have so far
+            if track_tokens:
+                return response.content if hasattr(response, "content") else str(response), total_usage
+            return response.content if hasattr(response, "content") else str(response)
 
         # Check for tool calls
         if hasattr(response, "tool_calls") and response.tool_calls:
@@ -142,6 +197,8 @@ def run_agent_with_tools(
                 if track_tokens:
                     return response.content, total_usage
                 return response.content
+    except TokenBudgetExceeded:
+        raise
     except Exception as e:
         logger.error(f"Error in run_agent_with_tools: {e}", exc_info=True)
         error_msg = f"Error executing agent: {str(e)}"
@@ -154,6 +211,8 @@ def invoke_llm_with_metrics(
     llm: Union[ChatOpenAI, ChatGoogleGenerativeAI],
     prompt: str,
     output_schema: Optional[Type[BaseModel]] = None,
+    token_budget: Optional[int] = None,
+    current_usage: int = 0,
 ) -> Tuple[any, TokenUsage]:
     """
     Invoke LLM and return result with token usage.
@@ -164,10 +223,20 @@ def invoke_llm_with_metrics(
         llm: The LLM to invoke
         prompt: The prompt to send
         output_schema: Optional Pydantic model for structured output
+        token_budget: Optional maximum total tokens allowed (None = unlimited)
+        current_usage: Current token usage count (for budget tracking)
 
     Returns:
         Tuple of (result, TokenUsage)
+
+    Raises:
+        TokenBudgetExceeded: If token_budget is specified and would be exceeded
     """
+    # Check if we're already over budget before making the call
+    if not check_token_budget(current_usage, token_budget):
+        logger.warning(f"Token budget already exceeded: {current_usage}/{token_budget}")
+        raise TokenBudgetExceeded(budget=token_budget, used=current_usage)
+
     try:
         if output_schema:
             structured_llm = llm.with_structured_output(output_schema, include_raw=True)
@@ -178,7 +247,17 @@ def invoke_llm_with_metrics(
             response = llm.invoke(prompt)
             result = response.content if hasattr(response, "content") else response
             usage = _extract_token_usage(response)
+
+        # Log if we exceeded budget after the call
+        new_total = current_usage + usage.total_tokens
+        if not check_token_budget(new_total, token_budget):
+            logger.warning(
+                f"Token budget exceeded after call: {new_total}/{token_budget}"
+            )
+
         return result, usage
+    except TokenBudgetExceeded:
+        raise
     except Exception as e:
         logger.error(f"Error in invoke_llm_with_metrics: {e}", exc_info=True)
         return None, TokenUsage()

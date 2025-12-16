@@ -3,7 +3,7 @@
 import time
 from typing import List, Optional, Tuple
 
-from agents.filings.tools import search_filings, FilingSearchResult
+from agents.filings.tools.tools import search_filings, FilingSearchResult
 from data.util.vector_store import collection_exists, get_collection_stats
 from util.logger import get_logger
 from models.metrics import AgentMetrics, TokenUsage

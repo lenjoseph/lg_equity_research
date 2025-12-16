@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Optional
 
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -14,12 +15,16 @@ LLM_MODELS = {
 # Default timeout for LLM API calls (in seconds)
 DEFAULT_LLM_TIMEOUT = 60
 
+# Default max tokens for LLM responses (None = no limit)
+DEFAULT_MAX_TOKENS: Optional[int] = None
+
 
 @lru_cache(maxsize=8)
 def get_openai_llm(
     model: str,
     temperature: float = 0.0,
     timeout: int = DEFAULT_LLM_TIMEOUT,
+    max_tokens: Optional[int] = DEFAULT_MAX_TOKENS,
 ) -> ChatOpenAI:
     """
     Get a cached ChatOpenAI instance.
@@ -28,6 +33,7 @@ def get_openai_llm(
         model: The OpenAI model name
         temperature: The temperature setting (default 0.0)
         timeout: Request timeout in seconds (default 60)
+        max_tokens: Maximum tokens in the response (None = no limit)
 
     Returns:
         Cached ChatOpenAI instance
@@ -36,6 +42,7 @@ def get_openai_llm(
         model=model,
         temperature=temperature,
         request_timeout=timeout,
+        max_tokens=max_tokens,
     )
 
 
@@ -45,6 +52,7 @@ def get_google_llm(
     temperature: float = 0.0,
     with_search_grounding: bool = False,
     timeout: int = DEFAULT_LLM_TIMEOUT,
+    max_tokens: Optional[int] = DEFAULT_MAX_TOKENS,
 ) -> ChatGoogleGenerativeAI:
     """
     Get a cached ChatGoogleGenerativeAI instance.
@@ -54,6 +62,7 @@ def get_google_llm(
         temperature: The temperature setting (default 0.0)
         with_search_grounding: Whether to enable Google Search grounding
         timeout: Request timeout in seconds (default 60)
+        max_tokens: Maximum tokens in the response (None = no limit)
 
     Returns:
         Cached ChatGoogleGenerativeAI instance
@@ -66,5 +75,6 @@ def get_google_llm(
         model=model,
         temperature=temperature,
         timeout=timeout,
+        max_output_tokens=max_tokens,
         model_kwargs=model_kwargs if model_kwargs else None,
     )
