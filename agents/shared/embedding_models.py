@@ -1,5 +1,6 @@
 from functools import lru_cache
 from langchain_huggingface import HuggingFaceEmbeddings
+import torch
 
 EMBEDDING_MODELS = {
     "hf_embed_fast": "all-MiniLM-L6-v2",
@@ -14,6 +15,9 @@ def get_embeddings() -> HuggingFaceEmbeddings:
     get cached hf embeddings instance
     first call downloads model (~130MB)
     """
+
+    torch.set_num_threads(2)
+
     return HuggingFaceEmbeddings(
         model=EMBEDDING_MODELS["hf_embed_fast"],
         model_kwargs={"device": "cpu"},
