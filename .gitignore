@@ -209,8 +209,15 @@ __marimo__/
 # langgraph
 .langgraph_api
 
-# RAG cache data (preserve directories with .gitkeep)
-data/filings/*
-!data/filings/.gitkeep
-data/chroma/*
-!data/chroma/.gitkeep
+# macOS
+.DS_Store
+
+# Data files — keep raw / generated data out of version control.
+# Strategy: ignore everything under data/, then re-include directories
+# (so git can descend into them), the util/ helper scripts, and any
+# .gitkeep markers used to preserve directory layout.
+data/**
+!data/**/
+!data/util/**
+!data/**/.gitkeep
+data/util/**/__pycache__/
